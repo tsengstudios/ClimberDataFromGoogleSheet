@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        
+        /* CSS for fancy checkboxes */
+        #sst-table {
+            
+        }
+        .sst-table td {
+            
+        }
+
+        .sst-toggle {
+            position: absolute;
+            margin-left: -9999px;
+            visibility: hidden;
+        }
+
+        .sst-toggle + label {
+            margin: 4px;
+            display: block;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            user-select: none;
+        }
+
+        input.sst-toggle-yes-no + label {
+            padding: 2px;
+            width: 100px;
+            height: 50px;
+        }
+
+        input.sst-toggle-yes-no + label:before,
+        input.sst-toggle-yes-no + label:after {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            color: black;
+            font-family: "Roboto Slab", serif;
+            font-size: 20px;
+            text-align: center;
+            line-height: 50px;
+        }
+
+        input.sst-toggle-yes-no + label:before {
+            background-color: #dddddd;
+            content: attr(data-off);
+            color: gray;
+            transition: transform 0.5s;
+            backface-visibility: hidden;
+        }
+
+        input.sst-toggle-yes-no + label:after {
+            background-color: #8ce196;
+            content: attr(data-on);
+            transition: transform 0.5s;
+            transform: rotateY(180deg);
+            backface-visibility: hidden;
+        }
+
+        input.sst-toggle-yes-no:checked + label:before {
+            transform: rotateY(180deg);
+        }
+
+        input.sst-toggle-yes-no:checked + label:after {
+            transform: rotateY(0);
+        }
+    </style>
+    <script>
+        function GetSelectedCategories() {
+            var sstCheckboxes = document.forms.namedItem("sst-form").getElementsByClassName("sst-toggle");
+            var selectedCategories = [];
+            for (var i = 0; i < sstCheckboxes.length; i++) {
+                if (sstCheckboxes[i].checked) {
+                    selectedCategories.push(sstCheckboxes[i].value);
+                }
+            }
+            document.getElementById("order").value = JSON.stringify(selectedCategories);
+        }
+
+        function GetRoundTarget() {
+            var dictRoundName = {
+                Qualifiers: 0,
+                Finals: 2,
+                SuperFinals: 3
+            };
+            return dictRoundName[document.getElementById("sst-targetround").value];
+        }
+    </script>
+</head>
+<body>
+    <div class="whatever">
+        <h3>Pull data from a Google Sheet and Post Scores from these categories</h3>
+        <div>
+            for this round:
+            <select id="sst-targetround" title="Post scores for this selected Round">
+                <option>Qualifiers</option>
+                <option>Finals</option>
+                <option>SuperFinals</option>
+            </select>
+        </div>
+        <form id="sst-form">
+            <table id="sst-table">
+                <tr>
+                    <td>
+                        <div class="switch">
+                            <input id="sst-toggle-1" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="11">
+                            <label for="sst-toggle-1" data-on="FJR" data-off="not fjr"></label>
+                        </div>
+                        <div class="switch">
+                            <input id="sst-toggle-2" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="1">
+                            <label for="sst-toggle-2" data-on="MJR" data-off="not mjr"></label>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="switch">
+                            <input id="sst-toggle-3" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="12">
+                            <label for="sst-toggle-3" data-on="FYA" data-off="not fya"></label>
+                        </div>
+                        <div class="switch">
+                            <input id="sst-toggle-4" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="2">
+                            <label for="sst-toggle-4" data-on="MYA" data-off="not mya"></label>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="switch">
+                            <input id="sst-toggle-5" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="13">
+                            <label for="sst-toggle-5" data-on="FYB" data-off="not fyb"></label>
+                        </div>
+                        <div class="switch">
+                            <input id="sst-toggle-6" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="3">
+                            <label for="sst-toggle-6" data-on="MYB" data-off="not myb"></label>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="switch">
+                            <input id="sst-toggle-7" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="14">
+                            <label for="sst-toggle-7" data-on="FYC" data-off="not fyc"></label>
+                        </div>
+                        <div class="switch">
+                            <input id="sst-toggle-8" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="4">
+                            <label for="sst-toggle-8" data-on="MYC" data-off="not myc"></label>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="switch">
+                            <input id="sst-toggle-9" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="15">
+                            <label for="sst-toggle-9" data-on="FYD" data-off="not fyd"></label>
+                        </div>
+                        <div class="switch">
+                            <input id="sst-toggle-10" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="5">
+                            <label for="sst-toggle-10" data-on="MYD" data-off="not myd"></label>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <input type="text" id="order" size="50">
+            <input type="button" onclick="GetSelectedCategories()" value="Get array of Categories">
+            <input type="text" id="order2" size="50">
+            <input type="button" onclick="document.getElementById('order2').value = GetRoundTarget()" value="Get round number  (rid)">
+            
+        </form>
+
+    </div>
+
+</body>
+</html>

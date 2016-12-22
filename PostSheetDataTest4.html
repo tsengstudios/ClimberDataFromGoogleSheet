@@ -1,10 +1,12 @@
 ﻿<html>
 <head>
     <script type="text/javascript">
-        // Your Client ID can be retrieved from your project in the Google
-        // Developer Console, https://console.developers.google.com
-        var CLIENT_ID = '922926857166-j8ot1aebe96erhoj836kjhdl493l51up.apps.googleusercontent.com';
-
+        var DEVELOPER_KEY = 'AIzaSyAKwmt3P1M8Kj3VcTuwu4hw8i_wZmxK4_Q';                               // The Browser API key obtained from the Google Developers Console.
+        var CLIENT_ID = '922926857166-j8ot1aebe96erhoj836kjhdl493l51up.apps.googleusercontent.com'; // Your Client ID can be retrieved from your project in the Google Developer Console, https://console.developers.google.com
+        var SCOPES = ['https://www.googleapis.com/auth/plus.login',
+                      'https://www.googleapis.com/auth/userinfo.email',
+                      'https://www.googleapis.com/auth/drive',
+                      'https://www.googleapis.com/auth/spreadsheets.readonly'].join(' ');
 
         //
         // Structure for element of climbersVM array data
@@ -40,19 +42,16 @@
             { Highhold: 16, Attempts: 17 }
         ];
 
-
-        var TargetSpreadsheetId = '1B_E9JIvUdwm_8u8QcRJU3kWtfTGXN5wcGvbBoXJKT4E'; //  https://docs.google.com/spreadsheets/d/1B_E9JIvUdwm_8u8QcRJU3kWtfTGXN5wcGvbBoXJKT4E
-
-        function PostSheetData(catid, gender) {
+        function PostSheetData(catid, gender, targetGoogleSheetId) {
             // Assumes gapi.client.load(discoveryUrl) already run, and response complete
 
             var genderOffset = (gender == "m") ? 1 : 0;
             var catOffset = (catid - 1) * 2;
-            var roundOffset = 0; // Differentiate rounds by different sheets
+            var roundOffset = 0; // Differentiate rounds with different sheets
             var sheetName = SHEETNAMES[roundOffset + catOffset + genderOffset];
 
             gapi.client.sheets.spreadsheets.values.get({
-                spreadsheetId: TargetSpreadsheetId,
+                spreadsheetId: targetGoogleSheetId,
                 range: sheetName + SHEETDATAADDRESS
             }).then(function(response) {
                 var range = response.result;
@@ -87,12 +86,6 @@
         }
 
 
-        //
-        // Google Sheets API, v4.  init, login, and housekeeping functions
-        //
-
-        var SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"];
-
         /**
          * Check if current user has authorized this application.
          */
@@ -100,7 +93,7 @@
             gapi.auth.authorize(
             {
                 'client_id': CLIENT_ID,
-                'scope': SCOPES.join(' '),
+                'scope': SCOPES,
                 'immediate': true
             }, handleAuthResult);
         }
@@ -143,26 +136,110 @@
                 'https://sheets.googleapis.com/$discovery/rest?version=v4';
             gapi.client.load(discoveryUrl); //.then(listMajors2);
         }
+        
+    </script>
 
 
-    </script>
-    <script src="https://apis.google.com/js/client.js?onload=checkAuth">
-        // this block initializes gapi, and should run checkAuth() (but doesn't on IE) which could unhide the authorize-div for the login button
-    </script>
+<script type="text/javascript">
+    // This script block - because IE doesn't handle the simple src with an onload parameter
+    function addScript(fileSrc, helperFnc) {
+        var head = document.getElementsByTagName('head')[0];
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.onreadystatechange = function() {
+            if (this.readyState === 'complete') helperFnc();
+        }
+        script.onload = helperFnc;
+        script.src = fileSrc;
+        head.appendChild(script);
+    };
+
+    addScript("https://apis.google.com/js/api.js", onApiLoad);
+    addScript("https://apis.google.com/js/client.js", checkAuth);
+    
+
+    var pickerApiLoaded = false;
+    var oauthToken;
+
+    // Use the API Loader script to load google.picker and gapi.auth.
+    function onApiLoad() {
+        gapi.load('auth', { 'callback': onAuthApiLoad });
+        gapi.load('picker', { 'callback': onPickerApiLoad });
+    }
+
+    function onAuthApiLoad() {
+        window.gapi.auth.authorize(
+            {
+                'client_id': CLIENT_ID,
+                'scope': SCOPES,
+                'immediate': true // Needs to be true for IE 11
+            },
+            handleAuthResult);
+    }
+
+    function onPickerApiLoad() {
+        pickerApiLoaded = true;
+    }
+
+    function handleAuthResult(authResult) {
+        if (authResult && !authResult.error) {
+            oauthToken = authResult.access_token;
+        }
+    }
+
+    // Create and render a Picker object for picking user Photos.
+    function ShowPicker() {
+        if (pickerApiLoaded && oauthToken) {
+            var picker = new google.picker.PickerBuilder().
+                addView(google.picker.ViewId.SPREADSHEETS).
+                setOAuthToken(oauthToken).
+                setDeveloperKey(DEVELOPER_KEY).
+                setCallback(pickerCallback).
+                build();
+            picker.setVisible(true);
+        }
+    }
+
+    // A simple callback implementation.
+    function pickerCallback(data) {
+        var url = 'nothing';
+        if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
+            var doc = data[google.picker.Response.DOCUMENTS][0];
+            var fileId = data.docs[0].id;
+            url = doc[google.picker.Document.URL];
+
+            alert('You picked: ' + url + " <br/>with id = " + fileId);
+            document.getElementById('googlesheetid').value = fileId;
+        }
+
+    }
+</script>
+
 </head>
 <body>
-<div id="authorize-div" style="display: none">
-    <span>Authorize access to Google Sheets API</span>
-    <!--Button for the user to click to initiate auth sequence -->
-    <button id="authorize-button" onclick="handleAuthClick(event)">
-        Authorize
-    </button>
-</div>
+    <div id="authorize-div" style="display: none">
+        <span>Authorize access to Google Sheets API</span>
+        <!--Button for the user to click to initiate auth sequence -->
+        <button id="authorize-button" onclick="handleAuthClick(event)">
+            Authorize
+        </button>
+    </div>
 <pre id="output"></pre>
+
+<div>
     
-<button onclick="PostSheetData(1, 'm', 2)">
-    PostData Test
-</button>
+    <div>
+        Google Sheet ID: <input type="text" id="googlesheetid" name="GoogleFileID" value="<not selected>"/>
+        
+        <button onclick="ShowPicker()">
+            Select Score Sheet
+        </button>
+    </div>
+    <button onclick="PostSheetData(1, 'm', document.getElementById('googlesheetid').value)">
+        Get Data from MJR of the above spreadsheet
+    </button>
+
+</div>
 
 </body>
 </html>
