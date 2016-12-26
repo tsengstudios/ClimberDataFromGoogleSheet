@@ -1,0 +1,19 @@
+﻿<div>
+    Current Google User: <span id="current-google-user"></span>
+</div>
+<div id="authorize-div" style="display: inline">
+    <span>Authorize access to Google Sheets API</span>
+    <button id="authorize-button" style="display: none;">Authorize</button>
+    <button id="signout-button" style="display: none;">De-Authorize</button>
+</div>
+<div>
+    <div>
+        Google Sheet ID: <input type="text" id="googlesheetid" name="GoogleFileID" value="<not selected>" />
+        <button onclick="ShowPicker()">
+            Select Score Sheet
+        </button>
+    </div>
+    <button onclick="PostSheetData(1, 'm', document.getElementById('googlesheetid').value)">
+        Get Data from MJR of the above spreadsheet
+    </button>
+</div>

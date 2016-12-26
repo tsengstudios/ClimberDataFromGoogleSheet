@@ -13,7 +13,7 @@
         'profile', 'email',
         'https://www.googleapis.com/auth/plus.login',
         'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/drive',
+        'https://www.googleapis.com/auth/drive.readonly',
         'https://www.googleapis.com/auth/spreadsheets.readonly'
     ].join(' ');
     var discoveryDocs = ['https://sheets.googleapis.com/$discovery/rest?version=v4'];
@@ -234,28 +234,17 @@
 </script>
 </head>
 <body>
-<div>
-    Current Google User: <span id="current-google-user"></span>
-</div>
-<div id="authorize-div" style="display: inline">
-    <span>Authorize access to Google Sheets API</span>
-    <button id="authorize-button" style="display: none;">Authorize</button>
-    <button id="signout-button" style="display: none;">De-Authorize</button>
-    
-
-    
-<!--    $1$Button for the user to click to initiate auth sequence #1#
-    <button id="authorize-button" onclick="handleAuthClick(event)">
-        Authorize
-    </button>-->
-</div>
-<pre id="output"></pre>
-
     <div>
-
+        Current Google User: <span id="current-google-user"></span>
+    </div>
+    <div id="authorize-div" style="display: inline">
+        <span>Authorize access to Google Sheets API</span>
+        <button id="authorize-button" style="display: none;">Authorize</button>
+        <button id="signout-button" style="display: none;">De-Authorize</button>
+    </div>
+    <div>
         <div>
             Google Sheet ID: <input type="text" id="googlesheetid" name="GoogleFileID" value="<not selected>" />
-
             <button onclick="ShowPicker()">
                 Select Score Sheet
             </button>
@@ -263,7 +252,6 @@
         <button onclick="PostSheetData(1, 'm', document.getElementById('googlesheetid').value)">
             Get Data from MJR of the above spreadsheet
         </button>
-
     </div>
 
 </body>
