@@ -1,4 +1,15 @@
-﻿
+﻿#sst-push-to-usac {
+    padding: 2px;
+    width: 150px;
+    height: 75px;
+    margin: auto;
+}
+
+td.far-right-cell {
+    width: 200px;
+    text-align: center;
+}
+
 /* CSS for fancy checkboxes */
 
 .sst-toggle {

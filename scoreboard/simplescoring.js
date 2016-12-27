@@ -13,6 +13,7 @@ var SCOPES = [
 var discoveryDocs = ['https://sheets.googleapis.com/$discovery/rest?version=v4'];
 
 
+
 //
 // CONSTANTS to access data inside score sheets
 //
@@ -37,7 +38,6 @@ var PROBLEMOFFSETS = [
 var pickerApiLoaded = false;
 var pickerOAuthToken;
 
-
 //
 // Structure for element of climbersVM array data
 //
@@ -54,6 +54,14 @@ ProbVM = function () {
     this.HighHold = "";
     this.Attempts = "";
 };
+
+
+var sstActiveSheetId;
+function sstActiveSheetChange(newId) {
+    document.getElementById('sst-googlesheetid').value = newId;
+    changeIframeSrc(newId);
+    sstActiveSheetId = newId;
+}
 
 
 function PostSheetData(catid, gender, targetGoogleSheetId) {
@@ -136,12 +144,12 @@ function updateSigninStatus(isSignedIn) {
     var signoutButton = document.getElementById('signout-button');
     if (isSignedIn) {
         authorizeButton.style.display = 'none';
-        signoutButton.style.display = 'block';
+        signoutButton.style.display = 'inline';
 
         getpickerOAuthToken();
         loadSheetsApi();
     } else {
-        authorizeButton.style.display = 'block';
+        authorizeButton.style.display = 'inline';
         signoutButton.style.display = 'none';
     }
 }
@@ -200,7 +208,7 @@ function handleAuthResult(authResult) {
     }
 }
 
-function ShowPicker() {
+function sstShowPicker() {
     // Create and render a Picker UI for picking a Google Sheet.
     if (pickerApiLoaded && pickerOAuthToken) {
         var picker = new google.picker.PickerBuilder().
@@ -221,8 +229,7 @@ function pickerCallback(data) {
         var fileId = data.docs[0].id;
         url = doc[google.picker.Document.URL];
 
-        // alert('You picked: ' + url + " <br/>with id = " + fileId);
-        document.getElementById('googlesheetid').value = fileId;
+        sstActiveSheetChange(fileId);
     }
 
 }

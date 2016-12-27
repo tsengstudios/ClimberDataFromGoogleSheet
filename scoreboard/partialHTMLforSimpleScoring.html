@@ -1,32 +1,28 @@
-﻿<div>
-    Current Google User: <span id="current-google-user"></span>
-</div>
-<div id="authorize-div" style="display: inline">
-    <span>Authorize access to Google Sheets API</span>
-    <button id="authorize-button" style="display: none;">Authorize</button>
-    <button id="signout-button" style="display: none;">De-Authorize</button>
+﻿<div id="authorize-div">
+    <p>
+        Current Google User:
+        <span id="current-google-user"></span>
+        <button id="authorize-button" style="display: none;">Authorize</button>
+        <button id="signout-button" style="display: none;">De-Authorize</button>
+        <span>access to your Google Sheets</span>
+    </p>
 </div>
 <div>
     <div>
-        Google Sheet ID: <input type="text" id="googlesheetid" name="GoogleFileID" value="<not selected>" />
-        <button onclick="ShowPicker()">
-            Select Score Sheet
+        <button onclick="sstShowPicker()">
+            Change Google Sheet
+        </button>
+        <span>Google Sheet ID:</span>
+        <input type="text" id="sst-googlesheetid" name="GoogleFileID" value="" />
+
+        <button onclick="PostSheetData(1, 'm', document.getElementById('sst-googlesheetid').value)">
+            TEST - Get Data from MJR of the above spreadsheet
         </button>
     </div>
-    <button onclick="PostSheetData(1, 'm', document.getElementById('googlesheetid').value)">
-        Get Data from MJR of the above spreadsheet
-    </button>
+
 </div>
 <div class="sst-round-category-selection">
-    <h3>Pull data from Google Sheet and Post Scores from these categories</h3>
-    <div>
-        for this round:
-        <select id="sst-targetround" title="Post scores for this selected Round">
-            <option>Qualifiers</option>
-            <option>Finals</option>
-            <option>SuperFinals</option>
-        </select>
-    </div>
+    <h3>Push scores from these categories to USAC</h3>
     <form id="sst-form">
         <table id="sst-table">
             <tr>
@@ -80,9 +76,20 @@
                         <label for="sst-toggle-10" data-on="MYD" data-off="not myd"></label>
                     </div>
                 </td>
+                <td class="far-right-cell">
+                    <div>
+                        for this round:
+                        <select id="sst-targetround" title="Post scores for this selected Round">
+                            <option>Qualifiers</option>
+                            <option>Finals</option>
+                            <option>SuperFinals</option>
+                        </select>
+                    </div>
+                    <input id="sst-push-to-usac" type="button" onclick="alert('loop through each category....')" value="Push to USAC">
+                </td>
             </tr>
         </table>
-
+        
         <!--    Test UI just to check above UI and utility functions are working  -->
         <input type="text" id="sst-order" size="50">
         <input type="button" onclick="document.getElementById('sst-order').value = JSON.stringify(GetSelectedCategories())" value="Get array of Categories">

@@ -4,6 +4,10 @@ console.log("hello scoreboard");
 include("/scoreboard/file1.js");
 include("/scoreboard/simplescoring.js");
 includeCSS("/scoreboard/sst.css");
+insertMetaForGoogleAPIs();
+
+var DEFAULTSHEETID = '1JV_y9P5UkX0jatGNpYJHQGS5Qh86NFM1LC1xddfNzbs';
+
 
 function scoreboardInit() {
     var divBouldering = document.getElementById("divBouldering");
@@ -17,12 +21,12 @@ function scoreboardInit() {
     divSheets.id = "divSheets";
     divSheets.style = 'display:none; width: 100%; height:700px;';
     divSheets.innerHTML =
-	    "<iframe style='height: 100%; width: 100%' src='https://docs.google.com/spreadsheets/d/1JV_y9P5UkX0jatGNpYJHQGS5Qh86NFM1LC1xddfNzbs/edit?usp=sharing &widget=true&amp;headers=false'> </iframe>";
+	    "<iframe style='height: 100%; width: 100%' src='https://docs.google.com/spreadsheets/d/" + DEFAULTSHEETID + "/edit?usp=sharing &widget=true&amp;headers=false'> </iframe>";
 
     divBouldering.parentElement.appendChild(divSheets);
 
     $("#divSheets").append($('<div class="partialHTML">').load("/scoreboard/partialHTMLforSimpleScoring.html"));
-
+    
     insertGoogleAPIjs();    // TODO - This currently needs to happen after we insert HMTL controls that our other code assumes
 
     //wait for bouldering tab to display new iframe
@@ -69,6 +73,16 @@ function includeCSS(filename) {
     head.appendChild(e);
 }
 
+function insertMetaForGoogleAPIs() {
+    var head = document.getElementsByTagName('head')[0];
+
+    var e = document.createElement('meta');
+    e.setAttribute('name', "google-signin-client_id");
+    e.setAttribute('content', "922926857166-j8ot1aebe96erhoj836kjhdl493l51up.apps.googleusercontent.com");
+
+    head.appendChild(e);
+}
+
 function insertGoogleAPIjs() {
     var head = document.getElementsByTagName('head')[0];
 
@@ -79,9 +93,15 @@ function insertGoogleAPIjs() {
     script.setAttribute('onload', "this.onload = function() {};handleClientLoad()");
     script.setAttribute('onreadystatechange', "if (this.readyState === 'complete') this.onload()");
 
-    head.appendChild(script)
+    head.appendChild(script);
 }
 
+function changeIframeSrc(newSheetID) {
+    var sstPREFIX_GOOGLESHEET_URL = "https://docs.google.com/spreadsheets/d/";
+    var sstSUFFIX_GOOGLESHEET_URL = "/edit";
+
+    $('#divSheets iframe').attr('src', sstPREFIX_GOOGLESHEET_URL + newSheetID + sstSUFFIX_GOOGLESHEET_URL);
+}
 
 if (window.attachEvent) {
     window.attachEvent('onload', scoreboardInit);
