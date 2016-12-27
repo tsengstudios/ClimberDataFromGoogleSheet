@@ -3,6 +3,7 @@ console.log("hello scoreboard");
 //example of including other source. NOTE leading '/'
 include("/scoreboard/file1.js");
 include("/scoreboard/simplescoring.js");
+includeCSS("/scoreboard/sst.css");
 
 function scoreboardInit() {
     var divBouldering = document.getElementById("divBouldering");
@@ -20,7 +21,7 @@ function scoreboardInit() {
 
     divBouldering.parentElement.appendChild(divSheets);
 
-    $("#divSheets").append($('<div>').load("/scoreboard/partialHTMLforSimpleScoring.html"));
+    $("#divSheets").append($('<div class="partialHTML">').load("/scoreboard/partialHTMLforSimpleScoring.html"));
 
     insertGoogleAPIjs();    // TODO - This currently needs to happen after we insert HMTL controls that our other code assumes
 
@@ -60,11 +61,12 @@ function include(filename) {
 function includeCSS(filename) {
     var head = document.getElementsByTagName('head')[0];
 
-    var script = document.createElement('style');
-    script.src = filename;
-    script.type = 'text/javascript';
+    var e = document.createElement('link');
+    e.rel = 'stylesheet';
+    e.href = filename;
+    e.type = 'text/css';
 
-    head.appendChild(script)
+    head.appendChild(e);
 }
 
 function insertGoogleAPIjs() {

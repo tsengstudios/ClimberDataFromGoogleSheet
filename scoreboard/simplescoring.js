@@ -226,3 +226,26 @@ function pickerCallback(data) {
     }
 
 }
+
+//
+// Manage category UI
+//
+function GetSelectedCategories() {
+    var sstCheckboxes = document.forms.namedItem("sst-form").getElementsByClassName("sst-toggle");
+    var selectedCategories = [];
+    for (var i = 0; i < sstCheckboxes.length; i++) {
+        if (sstCheckboxes[i].checked) {
+            selectedCategories.push(sstCheckboxes[i].value);
+        }
+    }
+    return selectedCategories;
+}
+
+function GetRoundTarget() {
+    var dictRoundName = {
+        Qualifiers: 0,
+        Finals: 2,
+        SuperFinals: 3
+    };
+    return dictRoundName[document.getElementById("sst-targetround").value];
+}
