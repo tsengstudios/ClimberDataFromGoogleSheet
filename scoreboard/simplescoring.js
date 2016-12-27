@@ -4,9 +4,9 @@
 var DEVELOPER_KEY = 'AIzaSyAKwmt3P1M8Kj3VcTuwu4hw8i_wZmxK4_Q'; // The Browser API key obtained from the Google Developers Console.
 var CLIENT_ID = '922926857166-j8ot1aebe96erhoj836kjhdl493l51up.apps.googleusercontent.com'; // Your Client ID can be retrieved from your project in the Google Developer Console, https://console.developers.google.com
 var SCOPES = [
-    'profile', 'email',
-    'https://www.googleapis.com/auth/plus.login',
-    'https://www.googleapis.com/auth/userinfo.email',
+//    'profile', 'email',
+//    'https://www.googleapis.com/auth/plus.login',
+//    'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/drive.readonly',
     'https://www.googleapis.com/auth/spreadsheets.readonly'
 ].join(' ');
@@ -183,10 +183,10 @@ function getpickerOAuthToken() {
     // pickerOAuthToken is needed for the Picker
     gapi.auth.authorize(
         {
-            'api_key': DEVELOPER_KEY,
+            //'apiKey': DEVELOPER_KEY,
             'client_id': CLIENT_ID,
             'scope': SCOPES,
-            'immediate': true // Needs to be true for IE 11 
+            'immediate': false // Needs to be true for IE 11 
         },
         handleAuthResult);
 }
