@@ -2,14 +2,16 @@ console.log("hello scoreboard");
 
 //example of including other source. NOTE leading '/'
 include("/scoreboard/file1.js");
+
 include("/scoreboard/simplescoring.js");
-includeCSS("/scoreboard/sst.css");
-insertMetaForGoogleAPIs();
+//includeCSS("/scoreboard/sst.css");
+insertMetaForGoogleAPIs();  // Still needed for authentication
 
 var DEFAULTSHEETID = '1JV_y9P5UkX0jatGNpYJHQGS5Qh86NFM1LC1xddfNzbs';
 
-
 function scoreboardInit() {
+    $("head").append($('<style></style>').load("/scoreboard/sst.css"));
+    $("#divBouldering").parent().append($('<div class="partialHTML">').load("/scoreboard/partialHTMLforSimpleScoring.html"));
     var divBouldering = document.getElementById("divBouldering");
 
     if (!divBouldering) {
@@ -25,8 +27,6 @@ function scoreboardInit() {
 
     divBouldering.parentElement.appendChild(divSheets);
 
-    $("#divSheets").append($('<div class="partialHTML">').load("/scoreboard/partialHTMLforSimpleScoring.html"));
-    
     insertGoogleAPIjs();    // TODO - This currently needs to happen after we insert HMTL controls that our other code assumes
 
     //wait for bouldering tab to display new iframe

@@ -146,7 +146,6 @@ function updateSigninStatus(isSignedIn) {
         authorizeButton.style.display = 'none';
         signoutButton.style.display = 'inline';
 
-        getpickerOAuthToken();
         loadSheetsApi();
     } else {
         authorizeButton.style.display = 'inline';
@@ -179,7 +178,10 @@ var userChanged = function (user) {
  * Called after user is 'auth' authorized
  */
 function loadSheetsApi() {
-    return gapi.client.load('https://sheets.googleapis.com/$discovery/rest?version=v4');
+    return gapi.client.load('https://sheets.googleapis.com/$discovery/rest?version=v4')
+        .then(function() {
+            getpickerOAuthToken();
+        });
 }
 
 
@@ -218,6 +220,8 @@ function sstShowPicker() {
             setCallback(pickerCallback).
             build();
         picker.setVisible(true);
+    } else {
+        getpickerOAuthToken();
     }
 }
 
@@ -238,7 +242,7 @@ function pickerCallback(data) {
 // Manage category UI
 //
 function GetSelectedCategories() {
-    var sstCheckboxes = document.forms.namedItem("sst-form").getElementsByClassName("sst-toggle");
+    var sstCheckboxes = document.getElementById("sst-form").getElementsByClassName("sst-toggle");
     var selectedCategories = [];
     for (var i = 0; i < sstCheckboxes.length; i++) {
         if (sstCheckboxes[i].checked) {

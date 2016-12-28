@@ -2,28 +2,24 @@
     <p>
         Current Google User:
         <span id="current-google-user"></span>
-        <button id="authorize-button" style="display: none;">Authorize</button>
-        <button id="signout-button" style="display: none;">De-Authorize</button>
+        <input type="button" id="authorize-button" style="display: none;" value="Authorize"/>
+        <input type="button" id="signout-button" style="display: none;" value="De-Authorize"/>
         <span>access to your Google Sheets</span>
     </p>
 </div>
 <div>
     <div>
-        <button onclick="sstShowPicker()">
-            Change Google Sheet
-        </button>
-        <span>Google Sheet ID:</span>
-        <input type="text" id="sst-googlesheetid" name="GoogleFileID" value="" />
-
-        <button onclick="PostSheetData(1, 'm', document.getElementById('sst-googlesheetid').value)">
-            TEST - Get Data from MJR of the above spreadsheet
-        </button>
+        <input type="button" onclick="sstShowPicker()" value="Change Google Sheet"/>
+        <div class="sst-for-testing-only" style="display: none">
+            <span>Google Sheet ID:</span>
+            <input type="text" id="sst-googlesheetid" name="GoogleFileID" value="" />
+            <input type="button" onclick="PostSheetData(1, 'm', document.getElementById('sst-googlesheetid').value)" value="TEST - Get Data from MJR of the above spreadsheet" />
+        </div>
     </div>
-
 </div>
 <div class="sst-round-category-selection">
     <h3>Push scores from these categories to USAC</h3>
-    <form id="sst-form">
+    <div id="sst-form">
         <table id="sst-table">
             <tr>
                 <td>
@@ -89,13 +85,13 @@
                 </td>
             </tr>
         </table>
-        
-        <!--    Test UI just to check above UI and utility functions are working  -->
-        <input type="text" id="sst-order" size="50">
-        <input type="button" onclick="document.getElementById('sst-order').value = JSON.stringify(GetSelectedCategories())" value="Get array of Categories">
-        <input type="text" id="sst-order2" size="50">
-        <input type="button" onclick="document.getElementById('sst-order2').value = GetRoundTarget()" value="Get round number  (rid)">
 
-    </form>
-
+        <div class="sst-for-testing-only" style="display: none">
+            <!-- Test UI just to check above UI and utility functions are working -->
+            <input type="text" id="sst-order" size="50">
+            <input type="button" onclick="document.getElementById('sst-order').value = JSON.stringify(GetSelectedCategories())" value="Get array of Categories">
+            <input type="text" id="sst-order2" size="50">
+            <input type="button" onclick="document.getElementById('sst-order2').value = GetRoundTarget()" value="Get round number  (rid)">
+        </div>
+    </div>
 </div>
