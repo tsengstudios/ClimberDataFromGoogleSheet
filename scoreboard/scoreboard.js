@@ -4,7 +4,7 @@ console.log("hello scoreboard");
 include("/scoreboard/file1.js");
 
 include("/scoreboard/simplescoring.js");
-//includeCSS("/scoreboard/sst.css");
+include("/scoreboard/senddata2usac.js");
 insertMetaForGoogleAPIs();  // Still needed for authentication
 
 var DEFAULTSHEETID = '1JV_y9P5UkX0jatGNpYJHQGS5Qh86NFM1LC1xddfNzbs';
@@ -48,7 +48,7 @@ function waitForBoulderingTab() {
         return;
     }
 
-    divBouldering.style = "display:none";
+    //  divBouldering.style = "display:none";
     divSheets.style = 'width: 100%; height:700px;';
 }
 
@@ -90,7 +90,7 @@ function insertGoogleAPIjs() {
     script.setAttributeNode(document.createAttribute("async"));
     script.setAttributeNode(document.createAttribute("defer"));
     script.setAttribute('src', "https://apis.google.com/js/api.js");
-    script.setAttribute('onload', "this.onload = function() {};handleClientLoad()");
+    script.setAttribute('onload', "this.onload = function() {};sstHandleClientLoad()");
     script.setAttribute('onreadystatechange', "if (this.readyState === 'complete') this.onload()");
 
     head.appendChild(script);

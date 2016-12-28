@@ -10,7 +10,7 @@ var SCOPES = [
     'https://www.googleapis.com/auth/drive.readonly',
     'https://www.googleapis.com/auth/spreadsheets.readonly'
 ].join(' ');
-var discoveryDocs = ['https://sheets.googleapis.com/$discovery/rest?version=v4'];
+var DISCOVERYDOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
 
 
 
@@ -19,7 +19,7 @@ var discoveryDocs = ['https://sheets.googleapis.com/$discovery/rest?version=v4']
 //
 var SHEETNAMES = ["FJR", "MJR", "FYA", "MYA", "FYB", "MYB", "FYC", "MYC", "FYD", "MYD"];
 var SHEETDATAADDRESS = '!A5:Z'; // the range address of interesting data on the sheet. Note the end column allows Google to just send the interesting rows...
-var MAXPROBLEMS = 6;
+var MAXPROBLEMS = 4;    //Divisional Qualifiers
 var CLIMBERNAMEOFFSET = 0;
 var MEMBERIDOFFSET = 25;
 var PROBLEMOFFSETS = [
@@ -30,6 +30,40 @@ var PROBLEMOFFSETS = [
     { Highhold: 17, Attempts: 18 },
     { Highhold: 20, Attempts: 21 }
 ];
+var SHEETNUMPROBLEMSADDRESS = '!C2'; // the range address of the number of problems for this round
+var SHEETTOPHOLDSADDRESS = '!H3:Z3'; // the range address of the top hold #'s of the problems
+var SHEETTOPHOLDOFFSETS = [
+    0, 3, 6, 9, 12, 15
+];
+
+
+//
+// CONSTANTS for USAC requests
+//
+var sstCategoryName2CatId = {
+    FJR: 2,
+    MJR: 2,
+    FYA: 3,
+    MYA: 3,
+    FYB: 4,
+    MYB: 4,
+    FYC: 5,
+    MYC: 5,
+    FYD: 6,
+    MYD: 6
+};
+var sstCategoryName2Gender = {
+    FJR: 'f',
+    MJR: 'm',
+    FYA: 'f',
+    MYA: 'm',
+    FYB: 'f',
+    MYB: 'm',
+    FYC: 'f',
+    MYC: 'm',
+    FYD: 'f',
+    MYD: 'm'
+};
 
 
 //
@@ -37,6 +71,12 @@ var PROBLEMOFFSETS = [
 //
 var pickerApiLoaded = false;
 var pickerOAuthToken;
+var sstActiveSheetId;
+function sstActiveSheetChange(newId) {
+    document.getElementById('sst-googlesheetid').value = newId;
+    changeIframeSrc(newId);
+    sstActiveSheetId = newId;
+}
 
 //
 // Structure for element of climbersVM array data
@@ -56,25 +96,44 @@ ProbVM = function () {
 };
 
 
-var sstActiveSheetId;
-function sstActiveSheetChange(newId) {
-    document.getElementById('sst-googlesheetid').value = newId;
-    changeIframeSrc(newId);
-    sstActiveSheetId = newId;
+
+// 
+// Get data about active user's scoring module
+//
+
+function sstGetEventId() {
+    var edivTabHeaders = document.querySelector(".usac-view .event-view .tab-headers");
+    var eid = edivTabHeaders.getAttribute("data-eventid");
+
+    return eid;
+}
+
+function sstGetDisciplineId() {
+    var disciplinediv = document.querySelector(".usac-view .event-view .tab-body.active");
+    var did = disciplinediv.getAttribute("data-disciplineid");
+
+    // just fyi
+    //var currentRoundDiv = disciplinediv.querySelector(".competitor-wrapper" + catid + "[data-gender=" + g + "] .rounds-controls a.current");
+    //var rid = currentRoundDiv.getAttribute("data-roundid");
+    return did;
 }
 
 
-function PostSheetData(catid, gender, targetGoogleSheetId) {
+//
+// Google Sheets API
+//
+
+function sstPullSheetData(targetGoogleSheetId, categoryName, runWhenSuccess) {
     // Assumes gapi.load(googlesheetsdiscoveryUrl) already run, and response complete
 
-    var genderOffset = (gender == "m") ? 1 : 0;
-    var catOffset = (catid - 1) * 2;
-    var roundOffset = 0; // Differentiate rounds with different sheets
-    var sheetName = SHEETNAMES[roundOffset + catOffset + genderOffset];
+//    var genderOffset = (gender == "m") ? 1 : 0;
+//    var catOffset = (catid - 1) * 2;
+//    var roundOffset = 0; // Differentiate rounds with different sheets
+//    var sheetName = SHEETNAMES[roundOffset + catOffset + genderOffset];
 
     gapi.client.sheets.spreadsheets.values.get({
         spreadsheetId: targetGoogleSheetId,
-        range: sheetName + SHEETDATAADDRESS
+        range: categoryName + SHEETDATAADDRESS
     }).then(function (response) {
         var range = response.result;
         var climbersVM = [];
@@ -95,23 +154,19 @@ function PostSheetData(catid, gender, targetGoogleSheetId) {
                     climber.Problems[j].Attempts = row[PROBLEMOFFSETS[j].Attempts];
                 }
             }
-
-            alert(JSON.stringify(climbersVM, null, 3));
-            // ipjUSACSaveClimbersTable(catid,gender) //  TODO -- add round parameter  and climbersClipDataVM parameter
-
+            runWhenSuccess(categoryName, climbersVM);
         } else {
-            alert('No data found.');
+            alert("No data found for " + categoryName);
         }
     }, function (response) {
-        alert('Error: ' + response.result.error.message);
+        alert("Error trying to pull " + categoryName + ".  " + response.result.error.message);
     });
 }
-
 
 //
 // Initial Google API loading
 //
-function handleClientLoad() {
+function sstHandleClientLoad() {
     // Load the API client and auth2 and picker library
     gapi.load('client:auth2:picker', initAuth2);
 }
@@ -121,43 +176,43 @@ function initAuth2() {
         clientId: CLIENT_ID,
         scope: SCOPES
     }).then(function () {
-        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+        gapi.auth2.getAuthInstance().isSignedIn.listen(sstUpdateSigninStatus);
 
         // set the initial sign-in state.
-        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+        sstUpdateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
 
 
         // hide or show the login and logOUT buttons
         var authorizeButton = document.getElementById('authorize-button');
         var signoutButton = document.getElementById('signout-button');
-        authorizeButton.onclick = handleAuthClick;
-        signoutButton.onclick = handleSignoutClick;
+        authorizeButton.onclick = sstHandleAuthClick;
+        signoutButton.onclick = sstHandleSignoutClick;
 
         pickerApiLoaded = true; // TODO - wouldn't hurt to actually test that here.
     });
-    gapi.auth2.getAuthInstance().currentUser.listen(userChanged);
+    gapi.auth2.getAuthInstance().currentUser.listen(sstUserChanged);
 
 }
 
-function updateSigninStatus(isSignedIn) {
+function sstUpdateSigninStatus(isSignedIn) {
     var authorizeButton = document.getElementById('authorize-button');
     var signoutButton = document.getElementById('signout-button');
     if (isSignedIn) {
         authorizeButton.style.display = 'none';
         signoutButton.style.display = 'inline';
 
-        loadSheetsApi();
+        sstLoadSheetsApi();
     } else {
         authorizeButton.style.display = 'inline';
         signoutButton.style.display = 'none';
     }
 }
 
-function handleAuthClick(event) {
+function sstHandleAuthClick(event) {
     gapi.auth2.getAuthInstance().signIn();
 }
 
-function handleSignoutClick(event) {
+function sstHandleSignoutClick(event) {
     gapi.auth2.getAuthInstance().disconnect();  // signOut() merely signs the user out of this application, but not out of the browser session.  disconnect also deauthorizes the application so that the user has to reapprove of all the actions this application will do (useful for testing AND allows for UI to sign the user into a different google user account)
 }
 
@@ -166,7 +221,7 @@ function handleSignoutClick(event) {
  *
  * @param {GoogleUser} user the updated user.
  */
-var userChanged = function (user) {
+var sstUserChanged = function (user) {
     var x = document.getElementById("current-google-user");
     if (x)
         x.innerHTML = user.getBasicProfile().getEmail();
@@ -177,8 +232,8 @@ var userChanged = function (user) {
  * Load Sheets API client library.
  * Called after user is 'auth' authorized
  */
-function loadSheetsApi() {
-    return gapi.client.load('https://sheets.googleapis.com/$discovery/rest?version=v4')
+function sstLoadSheetsApi() {
+    return gapi.client.load(DISCOVERYDOC)
         .then(function() {
             getpickerOAuthToken();
         });
@@ -189,7 +244,7 @@ function loadSheetsApi() {
 // PICKER
 //
 function getpickerOAuthToken() {
-    // This is necessary just to get the pickerOAuthToken in the handleAuthResult()
+    // This is necessary just to get the pickerOAuthToken in the sstHandleAuthResult()
     // pickerOAuthToken is needed for the Picker
     gapi.auth.authorize(
         {
@@ -198,10 +253,10 @@ function getpickerOAuthToken() {
             'scope': SCOPES,
             'immediate': false // Needs to be true for IE 11 
         },
-        handleAuthResult);
+        sstHandleAuthResult);
 }
 
-function handleAuthResult(authResult) {
+function sstHandleAuthResult(authResult) {
     if (authResult && !authResult.error) {
         pickerOAuthToken = authResult.access_token; // for PickerBuilder requires this
     } else {
@@ -241,7 +296,7 @@ function pickerCallback(data) {
 //
 // Manage category UI
 //
-function GetSelectedCategories() {
+function sstGetSelectedCategories() {
     var sstCheckboxes = document.getElementById("sst-form").getElementsByClassName("sst-toggle");
     var selectedCategories = [];
     for (var i = 0; i < sstCheckboxes.length; i++) {
@@ -252,11 +307,45 @@ function GetSelectedCategories() {
     return selectedCategories;
 }
 
-function GetRoundTarget() {
-    var dictRoundName = {
-        Qualifiers: 0,
-        Finals: 2,
-        SuperFinals: 3
+function sstGetRoundTarget() {
+    var dictRoundName = {   // TODO - these values were good in the TEST Regional and Divisional
+        Qualifiers: 1,
+        Finals: 0,
+        SuperFinals: -1
     };
     return dictRoundName[document.getElementById("sst-targetround").value];
+}
+
+
+//
+// Test Functions
+//
+
+function TESTPullSheetData() {
+    sstPullSheetData(
+        document.getElementById('sst-googlesheetid').value,
+        "MJR",
+        TESTPullSheetDataCallback
+    );
+}
+function TESTPullSheetDataCallback(catName, climbersVM) {
+    alert("For category: " + catName + "      " + JSON.stringify(climbersVM, null, 3));
+}
+
+function TESTPushDatatoUSAC() {
+    sstPullSheetData(
+        document.getElementById('sst-googlesheetid').value,
+        "MJR",
+        TESTPushDatatoUSACCallback
+    );
+}
+function TESTPushDatatoUSACCallback(catName, climbersVM) {
+    sstipjUSACSaveClimbersTable(
+        sstGetEventId(),
+        sstGetDisciplineId(),
+        sstGetRoundTarget(),
+        sstCategoryName2CatId[catName],
+        sstCategoryName2Gender[catName],
+        climbersVM
+    );
 }

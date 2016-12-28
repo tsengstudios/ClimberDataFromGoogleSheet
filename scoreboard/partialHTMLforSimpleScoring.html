@@ -10,10 +10,11 @@
 <div>
     <div>
         <input type="button" onclick="sstShowPicker()" value="Change Google Sheet"/>
-        <div class="sst-for-testing-only" style="display: none">
+        <div class="sst-for-testing-only" style="display: inline">
             <span>Google Sheet ID:</span>
             <input type="text" id="sst-googlesheetid" name="GoogleFileID" value="" />
-            <input type="button" onclick="PostSheetData(1, 'm', document.getElementById('sst-googlesheetid').value)" value="TEST - Get Data from MJR of the above spreadsheet" />
+            <input type="button" onclick="TESTPullSheetData()" value="TEST - Get Data from MJR of the above spreadsheet"/>
+            <input type="button" onclick="TESTPushDatatoUSAC()" value="TEST - Push data to USAC" />
         </div>
     </div>
 </div>
@@ -24,51 +25,51 @@
             <tr>
                 <td>
                     <div class="switch">
-                        <input id="sst-toggle-1" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="11">
+                        <input id="sst-toggle-1" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="FJR">
                         <label for="sst-toggle-1" data-on="FJR" data-off="not fjr"></label>
                     </div>
                     <div class="switch">
-                        <input id="sst-toggle-2" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="1">
+                        <input id="sst-toggle-2" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="MJR">
                         <label for="sst-toggle-2" data-on="MJR" data-off="not mjr"></label>
                     </div>
                 </td>
                 <td>
                     <div class="switch">
-                        <input id="sst-toggle-3" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="12">
+                        <input id="sst-toggle-3" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="FYA">
                         <label for="sst-toggle-3" data-on="FYA" data-off="not fya"></label>
                     </div>
                     <div class="switch">
-                        <input id="sst-toggle-4" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="2">
+                        <input id="sst-toggle-4" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="MYA">
                         <label for="sst-toggle-4" data-on="MYA" data-off="not mya"></label>
                     </div>
                 </td>
                 <td>
                     <div class="switch">
-                        <input id="sst-toggle-5" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="13">
+                        <input id="sst-toggle-5" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="FYB">
                         <label for="sst-toggle-5" data-on="FYB" data-off="not fyb"></label>
                     </div>
                     <div class="switch">
-                        <input id="sst-toggle-6" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="3">
+                        <input id="sst-toggle-6" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="MYB">
                         <label for="sst-toggle-6" data-on="MYB" data-off="not myb"></label>
                     </div>
                 </td>
                 <td>
                     <div class="switch">
-                        <input id="sst-toggle-7" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="14">
+                        <input id="sst-toggle-7" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="FYC">
                         <label for="sst-toggle-7" data-on="FYC" data-off="not fyc"></label>
                     </div>
                     <div class="switch">
-                        <input id="sst-toggle-8" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="4">
+                        <input id="sst-toggle-8" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="MYC">
                         <label for="sst-toggle-8" data-on="MYC" data-off="not myc"></label>
                     </div>
                 </td>
                 <td>
                     <div class="switch">
-                        <input id="sst-toggle-9" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="15">
+                        <input id="sst-toggle-9" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="FYD">
                         <label for="sst-toggle-9" data-on="FYD" data-off="not fyd"></label>
                     </div>
                     <div class="switch">
-                        <input id="sst-toggle-10" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="5">
+                        <input id="sst-toggle-10" class="sst-toggle sst-toggle-yes-no" type="checkbox" value="MYD">
                         <label for="sst-toggle-10" data-on="MYD" data-off="not myd"></label>
                     </div>
                 </td>
@@ -86,12 +87,12 @@
             </tr>
         </table>
 
-        <div class="sst-for-testing-only" style="display: none">
+        <div class="sst-for-testing-only" style="display: inline">
             <!-- Test UI just to check above UI and utility functions are working -->
             <input type="text" id="sst-order" size="50">
-            <input type="button" onclick="document.getElementById('sst-order').value = JSON.stringify(GetSelectedCategories())" value="Get array of Categories">
+            <input type="button" onclick="document.getElementById('sst-order').value = JSON.stringify(sstGetSelectedCategories())" value="Get array of Categories">
             <input type="text" id="sst-order2" size="50">
-            <input type="button" onclick="document.getElementById('sst-order2').value = GetRoundTarget()" value="Get round number  (rid)">
+            <input type="button" onclick="document.getElementById('sst-order2').value = sstGetRoundTarget()" value="Get round number  (rid)">
         </div>
     </div>
 </div>
