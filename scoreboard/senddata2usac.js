@@ -8,7 +8,7 @@ function sstipjUSACSaveClimbersTable(eid, did, rid, catid, g, climbersVM) {
 
     ipjUSACBusy = true;
     try {
-        for (pid = 1; pid < 4; pid++) {     // TODO -- calculate max # Problems  THIS SHOULD be MAXPROBLEMS....
+        for (pid = 1; pid < 5; pid++) {     // TODO -- calculate max # Problems  THIS SHOULD be MAXPROBLEMS....
             var scores = sstGetScoresOf1Prob(pid, climbersVM);
 
             var rs = 2; // Assuming 2 is always good RoundStatus. I was looking at my current Test Module's problem "round statuses": ipjUSACGetRoundStatus(did, rid, g, catid);
@@ -46,7 +46,24 @@ function sstonSaveScoresOnsightResponse(objXMLHTTP) {     // Does not update dat
         var s = objXMLHTTP.responseText;
         r = s.substring(0, 2);
         if ((r == "s1") || (r == "s2")) { // success would normally update the ui here
-            console.log("a post to server has returned!");
+            //var responseFrom = s.split("|", 6);
+            s = s.substring(2);
+            var eid = s.substring(0, s.indexOf("|"));
+            s = s.substring(s.indexOf("|") + 1);
+            var did = s.substring(0, s.indexOf("|"));
+            s = s.substring(s.indexOf("|") + 1);
+            var catid = s.substring(0, s.indexOf("|"));
+            s = s.substring(s.indexOf("|") + 1);
+            var g = s.substring(0, s.indexOf("|"));
+            s = s.substring(s.indexOf("|") + 1);
+            var rid = s.substring(0, s.indexOf("|"));
+            s = s.substring(s.indexOf("|") + 1);
+            var pid = s.substring(0, s.indexOf("|"));
+            s = s.substring(s.indexOf("|") + 1);
+
+            console.log("a post to server has returned! category=" + catid +
+                                                        " gender=" + g +
+                                                        " problem=" + pid);
             return true;
         } else if (r == "s3") {  // an error returned
             s = s.substring(2);
@@ -61,7 +78,7 @@ function sstonSaveScoresOnsightResponse(objXMLHTTP) {     // Does not update dat
             tab.setAttribute("data-loaded", "true");
             ipjUSACSetVisibleCategories(did);
         }
-        alert('An error occurred saving scores for onsight. ' + s);
+        alert('An error occurred saving scores for onsight. Perhaps you did not complete a round to allow for entering scores of this selected round for the selected category.' + s);
     } catch (e) {
         alert('An exception occurred saving scores for onsight.');
     } finally {

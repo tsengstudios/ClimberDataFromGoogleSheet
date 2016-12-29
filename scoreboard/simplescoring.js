@@ -118,6 +118,15 @@ function sstGetDisciplineId() {
     return did;
 }
 
+function sstLookupCatName(catid, gender) {
+    var genderOffset = (gender == "m") ? 1 : 0;
+    var catOffset = (catid - 1) * 2;
+    var roundOffset = 0; // Differentiate rounds with different sheets
+    var sheetName = SHEETNAMES[roundOffset + catOffset + genderOffset];
+
+    return sheetName;
+}
+
 
 //
 // Google Sheets API
@@ -125,11 +134,6 @@ function sstGetDisciplineId() {
 
 function sstPullSheetData(targetGoogleSheetId, categoryName, runWhenSuccess) {
     // Assumes gapi.load(googlesheetsdiscoveryUrl) already run, and response complete
-
-//    var genderOffset = (gender == "m") ? 1 : 0;
-//    var catOffset = (catid - 1) * 2;
-//    var roundOffset = 0; // Differentiate rounds with different sheets
-//    var sheetName = SHEETNAMES[roundOffset + catOffset + genderOffset];
 
     gapi.client.sheets.spreadsheets.values.get({
         spreadsheetId: targetGoogleSheetId,
@@ -316,6 +320,32 @@ function sstGetRoundTarget() {
     return dictRoundName[document.getElementById("sst-targetround").value];
 }
 
+function sstPushtoUSAC() {
+    var selectedCategories = sstGetSelectedCategories();
+
+    if (selectedCategories.length == 0) {
+        alert("Please select at least 1 category to push data to USAC.");
+        return;
+    }
+
+    for (var c = 0; c < selectedCategories.length; c++) {
+        sstPullSheetData(sstActiveSheetId, selectedCategories[c], sstPushDatatoUSACCallback);
+    }
+
+}
+
+function sstPushDatatoUSACCallback(catName, climbersVM) {
+    sstipjUSACSaveClimbersTable(
+        sstGetEventId(),
+        sstGetDisciplineId(),
+        sstGetRoundTarget(),
+        sstCategoryName2CatId[catName],
+        sstCategoryName2Gender[catName],
+        climbersVM
+    );
+}
+
+
 
 //
 // Test Functions
@@ -336,16 +366,6 @@ function TESTPushDatatoUSAC() {
     sstPullSheetData(
         document.getElementById('sst-googlesheetid').value,
         "MJR",
-        TESTPushDatatoUSACCallback
-    );
-}
-function TESTPushDatatoUSACCallback(catName, climbersVM) {
-    sstipjUSACSaveClimbersTable(
-        sstGetEventId(),
-        sstGetDisciplineId(),
-        sstGetRoundTarget(),
-        sstCategoryName2CatId[catName],
-        sstCategoryName2Gender[catName],
-        climbersVM
+        sstPushDatatoUSACCallback
     );
 }

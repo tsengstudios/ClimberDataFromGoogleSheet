@@ -25,6 +25,8 @@ function scoreboardInit() {
     divSheets.innerHTML =
 	    "<iframe style='height: 100%; width: 100%' src='https://docs.google.com/spreadsheets/d/" + DEFAULTSHEETID + "/edit?usp=sharing &widget=true&amp;headers=false'> </iframe>";
 
+    sstActiveSheetId = DEFAULTSHEETID; // too early to call sstActiveSheetChange()
+
     divBouldering.parentElement.appendChild(divSheets);
 
     insertGoogleAPIjs();    // TODO - This currently needs to happen after we insert HMTL controls that our other code assumes
@@ -62,6 +64,7 @@ function include(filename) {
     head.appendChild(script)
 }
 
+/*  This function was failing with the proxy server.  The jquery line that I wrote to replace it works.     // TODO -- I didn't remove this yet, just in case the proxy server is going to be fixed (but I prefer my jquery right now; in fact, I wonder if that's why insertGoogleAPIs() isn't reliable....)
 function includeCSS(filename) {
     var head = document.getElementsByTagName('head')[0];
 
@@ -71,7 +74,7 @@ function includeCSS(filename) {
     e.type = 'text/css';
 
     head.appendChild(e);
-}
+}*/
 
 function insertMetaForGoogleAPIs() {
     var head = document.getElementsByTagName('head')[0];
