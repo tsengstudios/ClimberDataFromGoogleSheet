@@ -7,11 +7,16 @@ include("/scoreboard/simplescoring.js");
 include("/scoreboard/senddata2usac.js");
 insertMetaForGoogleAPIs();  // Still needed for authentication
 
-var DEFAULTSHEETID = '1JV_y9P5UkX0jatGNpYJHQGS5Qh86NFM1LC1xddfNzbs';
+var DEFAULTSHEETID = '18qPsgedpcgEZjwNhp9EVqXLvSergBGrnrf8T6m9umEY'; //'1JV_y9P5UkX0jatGNpYJHQGS5Qh86NFM1LC1xddfNzbs';
 
 function scoreboardInit() {
-    $("head").append($('<style></style>').load("/scoreboard/sst.css"));
-    $("#divBouldering").parent().append($('<div class="partialHTML">').load("/scoreboard/partialHTMLforSimpleScoring.html"));
+    $("head")
+        .append($('<style></style>')
+        .load("/scoreboard/sst.css"));
+    $("#divBouldering").parent()
+        .append($('<div id="sst-partialHTML" style="display:none;">')
+        .load("/scoreboard/partialHTMLforSimpleScoring.html"));
+
     var divBouldering = document.getElementById("divBouldering");
 
     if (!divBouldering) {
@@ -51,6 +56,7 @@ function waitForBoulderingTab() {
     }
 
     //  divBouldering.style = "display:none";
+    $('#sst-partialHTML').show();
     divSheets.style = 'width: 100%; height:700px;';
 }
 
@@ -63,18 +69,6 @@ function include(filename) {
 
     head.appendChild(script)
 }
-
-/*  This function was failing with the proxy server.  The jquery line that I wrote to replace it works.     // TODO -- I didn't remove this yet, just in case the proxy server is going to be fixed (but I prefer my jquery right now; in fact, I wonder if that's why insertGoogleAPIs() isn't reliable....)
-function includeCSS(filename) {
-    var head = document.getElementsByTagName('head')[0];
-
-    var e = document.createElement('link');
-    e.rel = 'stylesheet';
-    e.href = filename;
-    e.type = 'text/css';
-
-    head.appendChild(e);
-}*/
 
 function insertMetaForGoogleAPIs() {
     var head = document.getElementsByTagName('head')[0];

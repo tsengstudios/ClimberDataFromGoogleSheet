@@ -4,24 +4,19 @@
 var DEVELOPER_KEY = 'AIzaSyAKwmt3P1M8Kj3VcTuwu4hw8i_wZmxK4_Q'; // The Browser API key obtained from the Google Developers Console.
 var CLIENT_ID = '922926857166-j8ot1aebe96erhoj836kjhdl493l51up.apps.googleusercontent.com'; // Your Client ID can be retrieved from your project in the Google Developer Console, https://console.developers.google.com
 var SCOPES = [
-//    'profile', 'email',
-//    'https://www.googleapis.com/auth/plus.login',
-//    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/drive.readonly',
-    'https://www.googleapis.com/auth/spreadsheets.readonly'
-].join(' ');
+    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/spreadsheets'
+    ].join(' ');
 var DISCOVERYDOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
-
-
+var GOOGLESHEETSMIMETYPE = 'application/vnd.google-apps.spreadsheet';
+var EXCELXLSXMIMETYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 //
 // CONSTANTS to access data inside score sheets
 //
 var SHEETNAMES = ["FJR", "MJR", "FYA", "MYA", "FYB", "MYB", "FYC", "MYC", "FYD", "MYD"];
 var SHEETDATAADDRESS = '!A5:Z'; // the range address of interesting data on the sheet. Note the end column allows Google to just send the interesting rows...
-var MAXPROBLEMS = 4;    //Divisional Qualifiers
 var CLIMBERNAMEOFFSET = 0;
-var MEMBERIDOFFSET = 25;
 var PROBLEMOFFSETS = [
     { Highhold: 5, Attempts: 6 },
     { Highhold: 8, Attempts: 9 },
@@ -32,9 +27,9 @@ var PROBLEMOFFSETS = [
 ];
 var SHEETNUMPROBLEMSADDRESS = '!C2'; // the range address of the number of problems for this round
 var SHEETTOPHOLDSADDRESS = '!H3:Z3'; // the range address of the top hold #'s of the problems
-var SHEETTOPHOLDOFFSETS = [
-    0, 3, 6, 9, 12, 15
-];
+var SHEETTOPHOLDOFFSETS = [0, 3, 6, 9, 12, 15];
+var SHEETDATAHEADERADDRESS = '!A4:Z4';
+var SHEETROUNDNAMEADDRESS = '!D2';   // the range address of the round name
 
 
 //
@@ -64,23 +59,49 @@ var sstCategoryName2Gender = {
     FYD: 'f',
     MYD: 'm'
 };
+var sstRoundName2Rid = {   // TODO - these values were good in the TEST Regional and Divisional
+    Qualifiers: 1,
+    Finals: 0,
+    SuperFinals: -1,
+    SemiFinal:2            // TODO - Guessing
+};
+var sstRid2RoundAbbrev = { // TODO - these values were good in the TEST Regional and Divisional
+    "1": "Q",
+    "0": "F",
+    "-1": "SF",
+    "2":"S"                // TODO - Guessing
+};
 
 
 //
 // GLOBALS
 //
-var pickerApiLoaded = false;
-var pickerOAuthToken;
+var sstAwaiting = [];
+var sstDriveAPILoaded = false;
+var sstPickerApiLoaded = false;
+var sstPickerOAuthToken;
 var sstActiveSheetId;
 function sstActiveSheetChange(newId) {
     document.getElementById('sst-googlesheetid').value = newId;
     changeIframeSrc(newId);
     sstActiveSheetId = newId;
 }
+var sstActiveSheetAutoConvertId = "";
+var sstActiveSheetAutoConvertName = "";
 
 //
 // Structure for element of climbersVM array data
 //
+CategoryVM = function() {
+    var self = this;
+
+    this.Name = "";
+    this.RoundName = "";
+    this.MaxProblems = 0;
+    this.TopHolds = [];
+    this.MemberIdOffset = -1;
+    this.Climbers = [];
+}
 ClimberVM = function () {
     var self = this;
 
@@ -119,8 +140,8 @@ function sstGetDisciplineId() {
 }
 
 function sstLookupCatName(catid, gender) {
-    var genderOffset = (gender == "m") ? 1 : 0;
-    var catOffset = (catid - 1) * 2;
+    var genderOffset = (gender === "m") ? 1 : 0;
+    var catOffset = (catid - 2) * 2;
     var roundOffset = 0; // Differentiate rounds with different sheets
     var sheetName = SHEETNAMES[roundOffset + catOffset + genderOffset];
 
@@ -135,37 +156,92 @@ function sstLookupCatName(catid, gender) {
 function sstPullSheetData(targetGoogleSheetId, categoryName, runWhenSuccess) {
     // Assumes gapi.load(googlesheetsdiscoveryUrl) already run, and response complete
 
-    gapi.client.sheets.spreadsheets.values.get({
+    gapi.client.sheets.spreadsheets.values.batchGet({
         spreadsheetId: targetGoogleSheetId,
-        range: categoryName + SHEETDATAADDRESS
+        ranges: [
+            categoryName + SHEETNUMPROBLEMSADDRESS,
+            categoryName + SHEETTOPHOLDSADDRESS,
+            categoryName + SHEETDATAHEADERADDRESS,
+            categoryName + SHEETDATAADDRESS,
+            categoryName + SHEETROUNDNAMEADDRESS
+        ]
     }).then(function (response) {
-        var range = response.result;
-        var climbersVM = [];
+        var categoryVM = new CategoryVM();
+        categoryVM.Name = categoryName;
 
-        if (range.values.length > 0) {
-            for (i = 0; i < range.values.length; i++) {
-                var row = range.values[i];
+        if (response.result.valueRanges.length < 5)
+            alert("There were not the expected 5 ranges returned from this " + categoryName);
 
-                if (i >= climbersVM.length - 1) {
-                    climbersVM.push(new ClimberVM);
-                }
-                var climber = climbersVM[i];
-                climber.MemberId = row[MEMBERIDOFFSET];
+        var range0 = response.result.valueRanges[0];    // Get Number of Problems
+        if (range0.values.length > 0) {
+            categoryVM.MaxProblems = parseInt(range0.values[0][0]);
+        } else {
+            alert("The Number of problems was not found for this " + categoryName);
+            return;
+        }
 
-                for (j = 0; j < MAXPROBLEMS; j++) {
-                    climber.Problems.push(new ProbVM);
-                    climber.Problems[j].HighHold = row[PROBLEMOFFSETS[j].Highhold];
-                    climber.Problems[j].Attempts = row[PROBLEMOFFSETS[j].Attempts];
+        var range1 = response.result.valueRanges[1];    // Get Top Hold #s for each problem
+        if (range1.values.length > 0) {
+            var row1 = range1.values[0];
+            for (var j = 0; j < categoryVM.MaxProblems; j++) {
+                categoryVM.TopHolds.push(parseInt(row1[SHEETTOPHOLDOFFSETS[j]]));
+            }
+        } else {
+            alert("The top hold numbers were not found for this " + categoryName);
+            return;
+        }
+
+        var range2 = response.result.valueRanges[2];    // Find the column offset for the member id
+        if (range2.values.length > 0) {
+            var row2 = range2.values[0];
+            for (var j = 0; j < row2.length; j++) {
+                if (row2[j].startsWith("Member #")) {
+                    categoryVM.MemberIdOffset = j;
+                    break;
                 }
             }
-            runWhenSuccess(categoryName, climbersVM);
         } else {
-            alert("No data found for " + categoryName);
+            alert("The 'Member #' column header was not found for " + categoryName);
+            return;
         }
+        
+        var range3 = response.result.valueRanges[3];    // Get the entered scores
+        if (range3.values.length > 0) {
+            for (var i = 0; i < range3.values.length; i++) {
+                var row3 = range3.values[i];
+
+                if (i >= categoryVM.Climbers.length - 1) {
+                    categoryVM.Climbers.push(new ClimberVM);
+                }
+                var climber = categoryVM.Climbers[i];
+                climber.MemberId = row3[categoryVM.MemberIdOffset];
+
+                for (var j = 0; j < categoryVM.MaxProblems; j++) {
+                    climber.Problems.push(new ProbVM);
+                    climber.Problems[j].HighHold = parseInt(row3[PROBLEMOFFSETS[j].Highhold]);
+                    climber.Problems[j].Attempts = parseInt(row3[PROBLEMOFFSETS[j].Attempts]);
+                }
+            }
+        } else {
+            alert("No scores found for " + categoryName);
+            return;
+        }
+
+        var range4 = response.result.valueRanges[4];    // Get Round name
+        if (range4.values.length > 0) {
+            categoryVM.RoundName = range4.values[0][0];
+        } else {
+            alert("The Round Name was not found for " + categoryName);
+            return;
+        }
+
+        runWhenSuccess(categoryVM);
+        
     }, function (response) {
         alert("Error trying to pull " + categoryName + ".  " + response.result.error.message);
     });
 }
+
 
 //
 // Initial Google API loading
@@ -176,7 +252,7 @@ function sstHandleClientLoad() {
 }
 
 function initAuth2() {
-    var auth2 = gapi.auth2.init({
+    gapi.auth2.init({
         clientId: CLIENT_ID,
         scope: SCOPES
     }).then(function () {
@@ -192,10 +268,9 @@ function initAuth2() {
         authorizeButton.onclick = sstHandleAuthClick;
         signoutButton.onclick = sstHandleSignoutClick;
 
-        pickerApiLoaded = true; // TODO - wouldn't hurt to actually test that here.
+        sstPickerApiLoaded = true; // TODO - wouldn't hurt to actually test that here.
     });
     gapi.auth2.getAuthInstance().currentUser.listen(sstUserChanged);
-
 }
 
 function sstUpdateSigninStatus(isSignedIn) {
@@ -206,6 +281,7 @@ function sstUpdateSigninStatus(isSignedIn) {
         signoutButton.style.display = 'inline';
 
         sstLoadSheetsApi();
+        sstLoadDriveApi();
     } else {
         authorizeButton.style.display = 'inline';
         signoutButton.style.display = 'none';
@@ -244,12 +320,66 @@ function sstLoadSheetsApi() {
 }
 
 
+/**
+ * Drive API 
+ */
+function sstLoadDriveApi() {
+    gapi.client.load('drive', 'v3').then(function() {
+        sstDriveAPILoaded = true;
+    });
+}
+
+function sstIsGoogleSheetFileId(fileId) {
+    var request = gapi.client.drive.files.get({
+        'fileId': originFileId
+    });
+    request.execute(function (resp) {
+        alert (resp.mimeType == GOOGLESHEETSMIMETYPE);
+    });
+}
+
+function sstCopyXLS2GoogleSheet(originFileId, newTitle, runAfterCopy) {
+    if (sstDriveAPILoaded === false) {
+        sstLoadDriveApi();
+        return;
+    }
+
+    var request = gapi.client.drive.files.copy({
+        'fileId': originFileId,
+        'mimeType': 'application/vnd.google-apps.spreadsheet',
+        'name': newTitle
+    });
+    request.execute(function (resp) {
+        console.log('Copy ID: ' + resp.id);
+        runAfterCopy(resp);
+    });
+}
+
+function sstActiveSheetTryAutoConvert(callback) {   // use 2 globals and a nullable callback parameter
+    if (sstActiveSheetAutoConvertId === "") {
+        if (callback)
+            callback(false);
+        return; // nothing to convert
+    }
+
+    $("#sst-awaiting-autoconvert").show();
+    sstCopyXLS2GoogleSheet(sstActiveSheetAutoConvertId, sstActiveSheetAutoConvertName + "_autoconverted",
+        function (response) {
+            $("#sst-awaiting-autoconvert").hide();
+            sstActiveSheetChange(response.result.id);
+            if (callback)
+                callback(response.result.id);
+        }
+    );
+}
+
+
 //
 // PICKER
 //
 function getpickerOAuthToken() {
-    // This is necessary just to get the pickerOAuthToken in the sstHandleAuthResult()
-    // pickerOAuthToken is needed for the Picker
+    // This is necessary just to get the sstPickerOAuthToken in the sstHandleAuthResult()
+    // sstPickerOAuthToken is needed for the Picker
     gapi.auth.authorize(
         {
             //'apiKey': DEVELOPER_KEY,
@@ -262,7 +392,7 @@ function getpickerOAuthToken() {
 
 function sstHandleAuthResult(authResult) {
     if (authResult && !authResult.error) {
-        pickerOAuthToken = authResult.access_token; // for PickerBuilder requires this
+        sstPickerOAuthToken = authResult.access_token; // for PickerBuilder requires this
     } else {
         // they need to login
         gapi.auth2.getAuthInstance().signIn();
@@ -271,12 +401,12 @@ function sstHandleAuthResult(authResult) {
 
 function sstShowPicker() {
     // Create and render a Picker UI for picking a Google Sheet.
-    if (pickerApiLoaded && pickerOAuthToken) {
+    if (sstPickerApiLoaded && sstPickerOAuthToken) {
         var picker = new google.picker.PickerBuilder().
             addView(google.picker.ViewId.SPREADSHEETS).
-            setOAuthToken(pickerOAuthToken).
+            setOAuthToken(sstPickerOAuthToken).
             setDeveloperKey(DEVELOPER_KEY).
-            setCallback(pickerCallback).
+            setCallback(sstPickerCallback).
             build();
         picker.setVisible(true);
     } else {
@@ -284,22 +414,44 @@ function sstShowPicker() {
     }
 }
 
-// A simple callback implementation.
-function pickerCallback(data) {
+function sstPickerCallback(data) {
     var url = 'nothing';
     if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
-        var doc = data[google.picker.Response.DOCUMENTS][0];
         var fileId = data.docs[0].id;
-        url = doc[google.picker.Document.URL];
+        if (data.docs[0].mimeType === GOOGLESHEETSMIMETYPE) {
+            sstActiveSheetAutoConvertId = "";
+            sstActiveSheetChange(fileId);
+            $("#divSheets").removeClass("sst-greyed-autoconverted-and-will-be-overwritten");
+        } else if (data.docs[0].mimeType === EXCELXLSXMIMETYPE) {         // an XLSX fileId  0B8VRfGThSdoAQzVXV3k5UFN1VG8
+            // convert and then point to the converted file
+            sstActiveSheetAutoConvertId = fileId;
+            sstActiveSheetAutoConvertName = data.docs[0].name;
+            sstActiveSheetTryAutoConvert();
+            $("#divSheets").addClass("sst-greyed-autoconverted-and-will-be-overwritten");
+        } 
+    }
+}
 
-        sstActiveSheetChange(fileId);
+
+//
+// sst UI
+//
+function sstPushtoUSACClicked() {
+    sstActiveSheetTryAutoConvert(sstPushtoUSAC);
+}
+function sstPushtoUSAC() {
+    var selectedCategories = sstGetSelectedCategories();
+
+    if (selectedCategories.length === 0) {
+        alert("Please select at least 1 category to push data to USAC.");
+        return;
+    }
+
+    for (var c = 0; c < selectedCategories.length; c++) {
+        sstPullSheetData(sstActiveSheetId, selectedCategories[c], sstPushDatatoUSACCallback);
     }
 
 }
-
-//
-// Manage category UI
-//
 function sstGetSelectedCategories() {
     var sstCheckboxes = document.getElementById("sst-form").getElementsByClassName("sst-toggle");
     var selectedCategories = [];
@@ -310,41 +462,53 @@ function sstGetSelectedCategories() {
     }
     return selectedCategories;
 }
-
-function sstGetRoundTarget() {
-    var dictRoundName = {   // TODO - these values were good in the TEST Regional and Divisional
-        Qualifiers: 1,
-        Finals: 0,
-        SuperFinals: -1
-    };
-    return dictRoundName[document.getElementById("sst-targetround").value];
-}
-
-function sstPushtoUSAC() {
-    var selectedCategories = sstGetSelectedCategories();
-
-    if (selectedCategories.length == 0) {
-        alert("Please select at least 1 category to push data to USAC.");
-        return;
-    }
-
-    for (var c = 0; c < selectedCategories.length; c++) {
-        sstPullSheetData(sstActiveSheetId, selectedCategories[c], sstPushDatatoUSACCallback);
-    }
-
-}
-
-function sstPushDatatoUSACCallback(catName, climbersVM) {
+function sstPushDatatoUSACCallback(cvm) {
     sstipjUSACSaveClimbersTable(
         sstGetEventId(),
         sstGetDisciplineId(),
-        sstGetRoundTarget(),
-        sstCategoryName2CatId[catName],
-        sstCategoryName2Gender[catName],
-        climbersVM
+        sstRoundName2Rid[cvm.RoundName],
+        sstCategoryName2CatId[cvm.Name],
+        sstCategoryName2Gender[cvm.Name],
+        cvm
     );
 }
 
+
+//
+// Status of Pushes to USAC
+//
+function sstAddAwaiting(toAdd) {
+    sstAwaiting.push(toAdd);
+    sstDisplayAwaiting();
+}
+
+function sstDisplayAwaiting() {
+    var s = "";
+    for (var i = 0; i < sstAwaiting.length; i++) {
+        s += sstAwaiting[i] + " ";
+    }
+    $("#sst-awaiting-span").text(s);
+    if (sstAwaiting.length > 0) {
+        $("#sst-awaiting-p").show();
+    } else {
+        $("#sst-awaiting-p").hide();
+    }
+}
+
+function sstRemoveAwaiting(toRemove) {
+    var index = sstAwaiting.indexOf(toRemove);
+
+    if (index > -1) {
+        sstAwaiting.splice(index, 1);
+    } else {    // toRemove is not found
+        alert("somehow was asked to remove an item we didn't ask to be pushed?");
+    } 
+    sstDisplayAwaiting();
+}
+
+function sstGenAwaitingName(rid,catid,g,pid) {
+    return sstLookupCatName(catid, g) + "-" + sstRid2RoundAbbrev[rid] + pid;
+}
 
 
 //
@@ -358,8 +522,8 @@ function TESTPullSheetData() {
         TESTPullSheetDataCallback
     );
 }
-function TESTPullSheetDataCallback(catName, climbersVM) {
-    alert("For category: " + catName + "      " + JSON.stringify(climbersVM, null, 3));
+function TESTPullSheetDataCallback(cvm) {
+    alert("For category: " + cvm.Name + "      " + JSON.stringify(cvm.Climbers, null, 3));
 }
 
 function TESTPushDatatoUSAC() {

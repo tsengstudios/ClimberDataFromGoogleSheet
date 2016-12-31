@@ -1,14 +1,41 @@
-﻿#sst-push-to-usac {
+﻿#sst-showpicker-button {
+    height: 50px;
+    padding: 10px;
+}
+#sst-push-to-usac {
     padding: 2px;
     width: 150px;
     height: 75px;
     margin: auto;
 }
 
-td.far-right-cell {
+td.far-right-cell-buttons {
     width: 200px;
     text-align: center;
 }
+
+#sst-awaiting-p {
+    color: darkred;
+    background-color: lightyellow;
+}
+#sst-awaiting-span {
+    font-size: small;    
+}
+#sst-awaiting-autoconvert {
+    color: darkred;
+    background-color: burlywood;
+}
+
+.sst-greyed-autoconverted-and-will-be-overwritten {
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+    background-color: #000;
+}
+.sst-greyed-autoconverted-and-will-be-overwritten::before {
+    content: "This was autoconverted and will be overwritten on the next push.";
+    color: white;
+}
+
 
 /* CSS for fancy checkboxes */
 

@@ -1,27 +1,20 @@
 ﻿
-function sstipjUSACSaveClimbersTable(eid, did, rid, catid, g, climbersVM) {
-    if (ipjUSACBusy) {
-        return false;
-    }
+function sstipjUSACSaveClimbersTable(eid, did, rid, catid, g, cvm) {
+    // TODO - Ignoring ipjUSACBusy   for now....
+    for (var pid = 1; pid < cvm.MaxProblems + 1; pid++) {
+        var scores = sstGetScoresOf1Prob(pid, cvm.Climbers);
+        var t = cvm.TopHolds[pid - 1];
+        var torig = cvm.TopHolds[pid - 1];
+        var rs = 2; // Assuming 2 is always good RoundStatus. I was looking at my current Test Module's problem "round statuses": ipjUSACGetRoundStatus(did, rid, g, catid);
 
-    var t = 99; var torig = 99;   // TODO -- IS this ever used?  It seems like it's completely ignored.  ELSE use an array, and import into a global
-
-    ipjUSACBusy = true;
-    try {
-        for (pid = 1; pid < 5; pid++) {     // TODO -- calculate max # Problems  THIS SHOULD be MAXPROBLEMS....
-            var scores = sstGetScoresOf1Prob(pid, climbersVM);
-
-            var rs = 2; // Assuming 2 is always good RoundStatus. I was looking at my current Test Module's problem "round statuses": ipjUSACGetRoundStatus(did, rid, g, catid);
+        try {
             ipjDoXmlHttpRequest(ipjUSACUniqueID, document.forms['IronPointForm'].action, "savescoresonsight|" + eid + "|" + did + "|" + g + "|" + catid + "|" + rid + "|" + pid + "|" + t + "|" + torig + "|" + rs + "|" + scores, sstonSaveScoresOnsightResponse, null, true);
-
-            //TODO -- should implement a counter for ipjUSACBusy = false  to tested and decremented in sstonSaveScoresOnsightResponse
+            sstAddAwaiting(sstGenAwaitingName(rid,catid,g,pid));
+        } catch (e) {
+            alert('An exception occurred pushing scores to USAC.');
         }
-    } catch (e) {
-        alert('An exception occurred saving pasted onsight scores.');
-        ipjUSACBusy = false;
-    }
+    }    
 }
-
 
 function sstGetScoresOf1Prob(problemNumber, climbersVM) {
     var s = "";
@@ -40,12 +33,12 @@ function sstGetScoresOf1Prob(problemNumber, climbersVM) {
 }
 
 function sstonSaveScoresOnsightResponse(objXMLHTTP) {     // Does not update data shown on webpage
-    ipjUSACBusy = true;
+    // TODO - ipjUSACBusy = true;
     var r = "";
     try {
         var s = objXMLHTTP.responseText;
         r = s.substring(0, 2);
-        if ((r == "s1") || (r == "s2")) { // success would normally update the ui here
+        if ((r == "s1") || (r == "s2")) { // success would normally update the USAC official scoring ui here
             //var responseFrom = s.split("|", 6);
             s = s.substring(2);
             var eid = s.substring(0, s.indexOf("|"));
@@ -61,16 +54,17 @@ function sstonSaveScoresOnsightResponse(objXMLHTTP) {     // Does not update dat
             var pid = s.substring(0, s.indexOf("|"));
             s = s.substring(s.indexOf("|") + 1);
 
+            sstRemoveAwaiting(sstGenAwaitingName(rid, catid, g, pid));
             console.log("a post to server has returned! category=" + catid +
                                                         " gender=" + g +
                                                         " problem=" + pid);
             return true;
-        } else if (r == "s3") {  // an error returned
+        } else if (r == "s0" || r == "s3") {  // an error returned
             s = s.substring(2);
             var eid = s.substring(0, s.indexOf("|"));
             s = s.substring(s.indexOf("|") + 1);
             var did = s.substring(0, s.indexOf("|"));
-            ipjUSACFlagForRefresh(true);
+            ipjUSACFlagForRefresh(true);    // TODO - maybe this should be for all responses?
             var tab = document.querySelector(".usac-view .event-view .tab-header[data-disciplineid='" + Math.abs(did) + "']");
             var tabBody = document.querySelector(".usac-view .event-view .tab-body[data-disciplineid='" + Math.abs(did) + "']");
             alert("Scores could not be saved because the current round is no longer available for scoring. Click OK to refresh.");
@@ -82,7 +76,7 @@ function sstonSaveScoresOnsightResponse(objXMLHTTP) {     // Does not update dat
     } catch (e) {
         alert('An exception occurred saving scores for onsight.');
     } finally {
-        ipjUSACBusy = false;
+        // TODO - ipjUSACBusy = false;
         if (r != "s3") {
 
         }
