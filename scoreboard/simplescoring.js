@@ -82,7 +82,6 @@ var sstPickerApiLoaded = false;
 var sstPickerOAuthToken;
 var sstActiveSheetId;
 function sstActiveSheetChange(newId) {
-    document.getElementById('sst-googlesheetid').value = newId;
     changeIframeSrc(newId);
     sstActiveSheetId = newId;
 }
@@ -511,25 +510,4 @@ function sstGenAwaitingName(rid,catid,g,pid) {
 }
 
 
-//
-// Test Functions
-//
 
-function TESTPullSheetData() {
-    sstPullSheetData(
-        document.getElementById('sst-googlesheetid').value,
-        "MJR",
-        TESTPullSheetDataCallback
-    );
-}
-function TESTPullSheetDataCallback(cvm) {
-    alert("For category: " + cvm.Name + "      " + JSON.stringify(cvm.Climbers, null, 3));
-}
-
-function TESTPushDatatoUSAC() {
-    sstPullSheetData(
-        document.getElementById('sst-googlesheetid').value,
-        "MJR",
-        sstPushDatatoUSACCallback
-    );
-}
