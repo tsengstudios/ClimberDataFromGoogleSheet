@@ -4,8 +4,8 @@ function sstipjUSACSaveClimbersTable(eid, did, rid, catid, g, cvm) {
     for (var pid = 1; pid < cvm.MaxProblems + 1; pid++) {
         var scores = sstGetScoresOf1Prob(pid, cvm.Climbers);
         var t = cvm.TopHolds[pid - 1];
-        var torig = cvm.TopHolds[pid - 1];
-        var rs = 2; // Assuming 2 is always good RoundStatus. I was looking at my current Test Module's problem "round statuses": ipjUSACGetRoundStatus(did, rid, g, catid);
+        var torig = 0;  // if torig is equal to t, then t is not recorded on server
+        var rs = ipjUSACGetRoundStatus(did, rid, g, catid);  // BAD assumption - it varies : Assuming 2 is always good RoundStatus. I was looking at my current Test Module's problem "round statuses": ipjUSACGetRoundStatus(did, rid, g, catid);
 
         try {
             ipjDoXmlHttpRequest(ipjUSACUniqueID, document.forms['IronPointForm'].action, "savescoresonsight|" + eid + "|" + did + "|" + g + "|" + catid + "|" + rid + "|" + pid + "|" + t + "|" + torig + "|" + rs + "|" + scores, sstonSaveScoresOnsightResponse, null, true);
