@@ -213,6 +213,7 @@ function sstPullSheetData(targetGoogleSheetId, categoryName, runWhenSuccess) {
                     categoryVM.Climbers.push(new ClimberVM);
                 }
                 var climber = categoryVM.Climbers[i];
+                climber.Name = row3[CLIMBERNAMEOFFSET];
                 climber.MemberId = row3[categoryVM.MemberIdOffset];
 
                 for (var j = 0; j < categoryVM.MaxProblems; j++) {
@@ -398,14 +399,14 @@ function sstHandleAuthResult(authResult) {
     }
 }
 
-function sstShowPicker() {
+function sstShowPicker(callback) {
     // Create and render a Picker UI for picking a Google Sheet.
     if (sstPickerApiLoaded && sstPickerOAuthToken) {
         var picker = new google.picker.PickerBuilder().
             addView(google.picker.ViewId.SPREADSHEETS).
             setOAuthToken(sstPickerOAuthToken).
             setDeveloperKey(DEVELOPER_KEY).
-            setCallback(sstPickerCallback).
+            setCallback(callback).
             build();
         picker.setVisible(true);
     } else {
@@ -413,7 +414,7 @@ function sstShowPicker() {
     }
 }
 
-function sstPickerCallback(data) {
+function sstPickerActiveSheetCallback(data) {
     var url = 'nothing';
     if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
         var fileId = data.docs[0].id;
@@ -472,6 +473,85 @@ function sstPushDatatoUSACCallback(cvm) {
     );
 }
 
+function sstCompareClicked() {
+    if (!sstActiveSheetId)
+        alert("You must select the main sheet first.");
+    $("sst-compare-results-div").empty();
+    $("sst-compare-results-wrapper").show();
+
+    // assume comparing with current sheet, and now need to select the other sheet
+    sstShowPicker(sstPickerDoubleCheckSheetCallback);
+}
+
+function sstPickerDoubleCheckSheetCallback(data) {
+    var url = 'nothing';
+    if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
+        var fileId = data.docs[0].id;
+        if (data.docs[0].mimeType === GOOGLESHEETSMIMETYPE) {
+            // now pull data on both sheets
+            sstCompare(fileId);
+        } else if (data.docs[0].mimeType === EXCELXLSXMIMETYPE) {         // an XLSX fileId  0B8VRfGThSdoAQzVXV3k5UFN1VG8
+            // convert and then point to the converted file
+            
+            sstActiveSheetAutoConvertId = fileId;
+
+            sstActiveSheetTryAutoConvert();
+
+        }
+    }
+}
+
+function sstCompare(dblCheckFileId) {
+    for (var i = 0; i < SHEETNAMES.length; i++) {
+        sstPullSheetData(dblCheckFileId, SHEETNAMES[i],
+            function (dblCheckCVM) {
+                sstPullSheetData(dblCheckFileId, SHEETNAMES[i],
+                    function (cVM) {
+                        sstCompareCVM(SHEETNAMES[i], cVM, dblCheckCVM);
+                    });
+            });
+    }
+}
+
+function sstCompareCVM(categoryName, cvmMain, cvm2nd) {
+    // check same climbers
+    var arrayMainClimbers = sstGetJQArrayClimbers(cvmMain);
+    var array2ndClimbers = sstGetJQArrayClimbers(cvm2nd);
+    var arrayNotIn2nd = arrayMainClimbers.not(array2ndClimbers);
+    var arrayNotInMain = array2ndClimbers.not(arrayMainClimbers);
+    if (arrayNotIn2nd.length > 0 || arrayNotInMain.length > 0) {
+        sstPrint("These climbers are not in the 2nd " + categoryName + "sheet:" + arrayNotIn2nd.join(', '));
+        sstPrint("These climbers are not in the current " + categoryName + "sheet:" + arrayNotInMain.join(', '));
+    }
+
+    // check problems of each climber. Assumes all climbers are in Main and 2nd
+    cvmMain.Climbers.forEach(function (c) {
+        var c2match = cvm2nd.Climbers.find(function (c2) { return c2.MemberId === c.MemberId });
+
+        if (c.Problems.length != c2match.Problems.length)
+            sstPrint(categoryName + " have a different count of Problems (" + c.Problems.length + "," + c2match.Problems.length + ")");
+
+        for (var iP = 0; iP < c.Problems.length; iP++) {
+            if (c.Problems[iP].HighHold != c2match.Problems[iP].HighHold) {
+                sstPrint(categoryName + " " + c.Name + " Problem " + iP + " Highhold " + c.Problems[iP].HighHold + " differs from " + c2match.Problems[iP].HighHold);
+            }
+
+            if (c.Problems[iP].Attempts != c2match.Problems[iP].Attempts) {
+                sstPrint(categoryName + " " + c.Name + " Problem " + iP + " Attempts " + c.Problems[iP].Attempts + " differs from " + c2match.Problems[iP].Attempts);
+            }
+        }
+
+    });
+
+}
+function sstPrint(s) {
+    $("sst-compare-results-div")
+        .append($("<p class='sst-compare-result-p'></p>")
+        .text(s));
+}
+//function sstCompareResultsHide() {
+//    $('sst-compare-results-wrapper').hide();
+//}
 
 //
 // Status of Pushes to USAC

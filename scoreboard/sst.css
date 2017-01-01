@@ -1,4 +1,7 @@
-﻿#sst-showpicker-button {
+﻿#sst-partialHTML {
+    position: relative;    
+}
+#sst-showpicker-button {
     height: 50px;
     padding: 10px;
 }
@@ -36,6 +39,28 @@ td.far-right-cell-buttons {
     color: white;
 }
 
+#sst-compare-button-div {
+    margin-left: 50px;
+}
+#sst-compare-button {
+    height: 50px;
+}
+#sst-compare-results-wrapper {
+    display: block;
+    border: thin solid blue;
+    margin-top: 10px;
+}
+#sst-compare-results-wrapper .sst-close-button {
+    position: absolute;
+    right: 0px;
+    
+}
+#sst-compare-results-wrapper  #sst-compare-results-div {
+    padding: 10px;
+}
+#sst-compare-results-wrapper  #sst-compare-results-div p.sst-compare-result-p {
+    background-color: lightgoldenrodyellow
+}
 
 /* CSS for fancy checkboxes */
 
