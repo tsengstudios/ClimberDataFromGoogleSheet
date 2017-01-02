@@ -365,7 +365,7 @@ function sstTryAutoConvert(callback, xlsId, xlsName) {   // use 2 globals (if pa
     }
 
     xlsName = (xlsName) ? xlsName : sstActiveSheetAutoConvertName;
-    sstSearchDestroyByFilename(xlsName + "_autoconverted"); // Hope this never deletes the new copy....
+    sstSearchDestroyACByFilename(xlsName + "_autoconverted"); // Hope this never deletes the new copy....
 
     $("#sst-awaiting-autoconvert").show();
     sstCopyXLS2GoogleSheet(
@@ -382,7 +382,7 @@ function sstTryAutoConvert(callback, xlsId, xlsName) {   // use 2 globals (if pa
     
 }
 
-function sstSearchDestroyByFilename(filename) {
+function sstSearchDestroyACByFilename(filename) {
     var request = gapi.client.drive.files.list({
         'q':"name='" + filename + "'",
         'pageSize': 200,
