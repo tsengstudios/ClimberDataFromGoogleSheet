@@ -39,6 +39,14 @@ td.far-right-cell-buttons {
     color: white;
 }
 
+#sst-init-sheet-button-div {
+    margin-left: 50px;
+}#sst-init-sheet-button {
+    white-space: normal;
+    width: 120px;
+}
+
+
 #sst-compare-button-div {
     margin-left: 50px;
 }

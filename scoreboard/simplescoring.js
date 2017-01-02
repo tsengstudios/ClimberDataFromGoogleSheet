@@ -27,6 +27,7 @@ var PROBLEMOFFSETS = [
 ];
 var SHEETNUMPROBLEMSADDRESS = '!C2'; // the range address of the number of problems for this round
 var SHEETTOPHOLDSADDRESS = '!H3:Z3'; // the range address of the top hold #'s of the problems
+var SHEETCLIMBERSINITADDRESS = "!A5";// used to push climber names, teamnames andd memberIds into a new scoring sheet
 var SHEETTOPHOLDOFFSETS = [0, 3, 6, 9, 12, 15];
 var SHEETDATAHEADERADDRESS = '!A4:Z4';
 var SHEETROUNDNAMEADDRESS = '!D2';   // the range address of the round name
@@ -106,6 +107,7 @@ ClimberVM = function () {
 
     this.Name = "";
     this.MemberId = "";
+    this.TeamName = "";
     this.Problems = [];
 };
 ProbVM = function () {
@@ -145,6 +147,21 @@ function sstLookupCatName(catid, gender) {
     var sheetName = SHEETNAMES[roundOffset + catOffset + genderOffset];
 
     return sheetName;
+}
+
+function sstFindRankedClimbers(cvm) {
+    var catid = sstCategoryName2CatId[cvm.Name];
+    var g = sstCategoryName2Gender[cvm.Name];
+
+    var $divCG = $("#divBouldering div.competitor-wrapper[data-categoryid='" + catid + "'][data-gender='" + g + "'] tr[data-competitorid]");
+    $divCG.each(function() {
+        var c = new ClimberVM();
+        c.MemberId = this.attributes["data-competitorid"].value;
+        c.Name = this.children[0].textContent;
+        c.TeamName = this.children[1].textContent;
+        cvm.Climbers.push(c);
+    });
+    return cvm;
 }
 
 
@@ -244,6 +261,42 @@ function sstPullSheetData(targetGoogleSheetId, categoryName, runWhenSuccess) {
 function sstBlankNaN(num) {         // because NaN != NaN  we don't want to compare NaN results of parseInt of an empty cell
     return isNaN(num) ? "" : num;
 }
+
+// TODO -- package up an array of cvm to pass in one batchUpdate
+function sstPushSheetData(targetGoogleSheetId, cvm, runWhenSuccess) {
+    // Assumes gapi.load(googlesheetsdiscoveryUrl) already run, and response complete
+    var GSRows = [];
+    var GSRow = function(cells) {
+        return ({ values: cells });
+    };
+    
+    cvm.Climbers.forEach(function (c) {
+        var gsCells = [];
+        gsCells.push(c.Name);
+        gsCells.push(c.TeamName);
+        gsCells.push(c.MemberId);
+        GSRows.push(GSRow(gsCells));
+    });
+
+    gapi.client.sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: targetGoogleSheetId,
+        valueInputOption: "USER_ENTERED",
+        data: [
+            {
+                range: cvm.Name + SHEETCLIMBERSINITADDRESS,
+                values: GSRows
+            }
+        ]
+    }).then(function (response) {
+        alert("Updated " + response.result.totalUpdatedRows + " Climbers");
+
+        if (runWhenSuccess)
+            runWhenSuccess(response);
+    }, function (response) {
+        alert("Error trying to push " + cvm.Name + ".  " + response.result.error.message);
+    });
+}
+
 
 //
 // Initial Google API loading
@@ -598,6 +651,29 @@ function sstGetJQArrayClimbers(cvm) {
     return $($.map(cvm.Climbers, function (c) {
         return c.Name;
     }));
+}
+
+function sstPushClimberNamesIds2SheetClicked() {
+    var cvm = new CategoryVM();
+    cvm.Name = "MJR";
+    sstFindRankedClimbers(cvm);
+
+    cvm.Name = "FJR";
+
+    var a = new ClimberVM();
+    a.Name = "Mary Bill";
+    a.TeamName = "TEam Bitone";
+    a.MemberId = "123456";
+    cvm.Climbers.push(a);
+
+    var b = new ClimberVM();
+    b.Name = "Sue Hill";
+    b.TeamName= "Zoo Team";
+    b.MemberId = "987654";
+    cvm.Climbers.push(b);
+
+
+    sstPushSheetData(sstActiveSheetId, cvm);
 }
 
 

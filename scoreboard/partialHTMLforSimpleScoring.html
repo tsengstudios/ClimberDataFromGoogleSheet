@@ -10,16 +10,23 @@
         </p>
     </div>
     <table>
-        <td>
-            <div>
-                <input type="button" id="sst-showpicker-button" onclick="sstShowPicker(sstPickerActiveSheetCallback)" value="Change Google Sheet. Or select XLSX to autoconvert" />
-            </div>        
-        </td>
-        <td>
-            <div id="sst-compare-button-div">
-                <input type="button" id="sst-compare-button" onclick="sstCompareClicked()" value="Compare with another Google Sheet or XLSX" />
-            </div>
-        </td>
+        <tr>
+            <td>
+                <div>
+                    <input type="button" id="sst-showpicker-button" onclick="sstShowPicker(sstPickerActiveSheetCallback)" value="Change Google Sheet. Or select XLSX to autoconvert" />
+                </div>
+            </td>
+            <td>
+                <div id="sst-init-sheet-button-div">
+                    <input type="button" id="sst-init-sheet-button" onclick="sstPushClimberNamesIds2SheetClicked()" value="Initialize Sheet&#13;&#10; Push Names & ID into selected sheet (testdata)" />
+                </div>
+            </td>
+            <td>
+                <div id="sst-compare-button-div">
+                    <input type="button" id="sst-compare-button" onclick="sstCompareClicked()" value="Compare with another Google Sheet or XLSX" />
+                </div>
+            </td>
+        </tr>
     </table>
     <div id="sst-compare-results-wrapper" style="display: none">
         <div class="sst-close-button">
