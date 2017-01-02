@@ -20,7 +20,7 @@ function sstGetScoresOf1Prob(problemNumber, climbersVM) {
     var s = "";
 
     for (r = 0; r < climbersVM.length; r++) {
-        if (problemNumber < 0 || climbersVM[r].Problems.length < problemNumber)
+        if (problemNumber < 0 || climbersVM[r].Problems.length < problemNumber || climbersVM[r].MemberId == "")
             continue;
         else {
             s += climbersVM[r].MemberId;

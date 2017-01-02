@@ -44,6 +44,7 @@ td.far-right-cell-buttons {
 }
 #sst-compare-button {
     height: 50px;
+    padding: 10px;
 }
 #sst-compare-results-wrapper {
     display: block;
@@ -59,7 +60,10 @@ td.far-right-cell-buttons {
     padding: 10px;
 }
 #sst-compare-results-wrapper  #sst-compare-results-div p.sst-compare-result-p {
-    background-color: lightgoldenrodyellow
+    background-color: lightgoldenrodyellow;
+}
+#sst-compare-results-wrapper  #sst-compare-results-div p.sst-compare-result-p.sst-good {
+    background-color: inherit;
 }
 
 /* CSS for fancy checkboxes */
