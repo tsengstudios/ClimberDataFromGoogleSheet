@@ -109,6 +109,7 @@ ClimberVM = function () {
     this.MemberId = "";
     this.TeamName = "";
     this.Problems = [];
+    this.Rank = -1; 
 };
 ProbVM = function () {
     var self = this;
@@ -159,6 +160,8 @@ function sstFindRankedClimbers(cvm) {
         c.MemberId = this.attributes["data-competitorid"].value;
         c.Name = this.children[0].textContent;
         c.TeamName = this.children[1].textContent;
+        if (this.querySelector(".scoring.result.rank"))
+            c.Rank = parseInt(this.querySelector(".scoring.result.rank").textContent);
         cvm.Climbers.push(c);
     });
     return cvm;
@@ -263,7 +266,7 @@ function sstBlankNaN(num) {         // because NaN != NaN  we don't want to comp
 }
 
 // TODO -- package up an array of cvm to pass in one batchUpdate
-function sstPushSheetData(targetGoogleSheetId, cvm, runWhenSuccess) {
+function sstInitSheetWithNamesId(targetGoogleSheetId, cvm, runWhenSuccess) {
     // Assumes gapi.load(googlesheetsdiscoveryUrl) already run, and response complete
     var GSRows = [];
     var GSRow = function(cells) {
@@ -528,11 +531,12 @@ function sstPushtoUSACClicked() {
 }
 function sstPushtoUSAC() {
     var selectedCategories = sstGetSelectedCategories();
-
     if (selectedCategories.length === 0) {
         alert("Please select at least 1 category to push data to USAC.");
         return;
     }
+
+    sstRemoveAllAwaiting();
 
     for (var c = 0; c < selectedCategories.length; c++) {
         sstPullSheetData(sstActiveSheetId, selectedCategories[c], sstPushDatatoUSACCallback);
@@ -654,26 +658,18 @@ function sstGetJQArrayClimbers(cvm) {
 }
 
 function sstPushClimberNamesIds2SheetClicked() {
-    var cvm = new CategoryVM();
-    cvm.Name = "MJR";
-    sstFindRankedClimbers(cvm);
+    if (!sstActiveSheetId) {
+        alert("You must select the main sheet first.");
+    }
 
-    cvm.Name = "FJR";
-
-    var a = new ClimberVM();
-    a.Name = "Mary Bill";
-    a.TeamName = "TEam Bitone";
-    a.MemberId = "123456";
-    cvm.Climbers.push(a);
-
-    var b = new ClimberVM();
-    b.Name = "Sue Hill";
-    b.TeamName= "Zoo Team";
-    b.MemberId = "987654";
-    cvm.Climbers.push(b);
-
-
-    sstPushSheetData(sstActiveSheetId, cvm);
+    if (confirm("This will OVERWRITE your sheet below with the names and ids of this event for ALL categories. Are you sure you want to continue with this scoresheet initialization?")) {
+        SHEETNAMES.forEach(function(catName) {
+            var cvm = new CategoryVM();
+            cvm.Name = catName;
+            sstFindRankedClimbers(cvm);
+            sstInitSheetWithNamesId(sstActiveSheetId, cvm);
+        });
+    }
 }
 
 
@@ -704,9 +700,12 @@ function sstRemoveAwaiting(toRemove) {
     if (index > -1) {
         sstAwaiting.splice(index, 1);
     } else {    // toRemove is not found
-        alert("somehow was asked to remove an item we didn't ask to be pushed?");
+        // removed this since we could be removing awaiting if the user pushes to usac before all the others come back.  alert("somehow was asked to remove an item we didn't ask to be pushed?");
     } 
     sstDisplayAwaiting();
+}
+function sstRemoveAllAwaiting() {
+    sstAwaiting.length = 0;
 }
 
 function sstGenAwaitingName(rid,catid,g,pid) {
