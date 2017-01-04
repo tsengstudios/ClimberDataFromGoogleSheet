@@ -23,8 +23,9 @@ function scoreboardInit() {
 
     sstActiveSheetId = DEFAULTSHEETID; // too early to call sstActiveSheetChange()
 
-    divBouldering.parentElement.appendChild(divSheets);
-    
+    //divBouldering.parentElement.appendChild(divSheets);
+    $(divSheets).insertAfter("#divEventName");    // one line change.  In case we want to reverse this....
+
     //wait for bouldering tab to display new iframe
     setTimeout(waitForBoulderingTab, 1000);
 }
@@ -43,9 +44,8 @@ function waitForBoulderingTab() {
         $("head")
             .append($('<style></style>')
                 .load("/scoreboard/sst.css"));
-        $("#divBouldering").parent()
-            .append($('<div id="sst-partialHTML" style="display:none;">')
-                .load("/scoreboard/partialHTMLforSimpleScoring.html"));
+        $('<div id="sst-partialHTML" style="display:none;">')
+                .load("/scoreboard/partialHTMLforSimpleScoring.html").insertAfter("#divEventName");
     }
 
     if (divBouldering.className != 'tab-body active') {
