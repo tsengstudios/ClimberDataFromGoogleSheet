@@ -238,8 +238,12 @@ function sstPullSheetData(targetGoogleSheetId, categoryName, runWhenSuccess) {
             for (var i = 0; i < range3.values.length; i++) {
                 var row3 = range3.values[i];
 
-                if (row3.length < 1 || row3[CLIMBERNAMEOFFSET] == "" || row3[categoryVM.MemberIdOffset] == "")
+                if (row3.length < 1 || row3[CLIMBERNAMEOFFSET] == "")
                     continue;   // don't include blank names or memberid rows
+                if (row3[categoryVM.MemberIdOffset] == "") {
+                    alert("no Member # found for " + categoryName + " " + row3[CLIMBERNAMEOFFSET] + ".  No scores read beyond this person.");
+                    break;
+                }
 
                 if (i >= categoryVM.Climbers.length - 1) {
                     categoryVM.Climbers.push(new ClimberVM);
@@ -304,7 +308,7 @@ function sstInitSheetWithNamesId(targetGoogleSheetId, cvm, runWhenSuccess) {
             }
         ]
     }).then(function (response) {
-        alert("Updated " + response.result.totalUpdatedRows + " Climbers");
+        // alert("Updated " + response.result.totalUpdatedRows + " Climbers");
 
         if (runWhenSuccess)
             runWhenSuccess(response);
