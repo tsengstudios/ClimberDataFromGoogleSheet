@@ -31,6 +31,7 @@ var SHEETCLIMBERSINITADDRESS = "!A5";// used to push climber names, teamnames an
 var SHEETTOPHOLDOFFSETS = [0, 3, 6, 9, 12, 15];
 var SHEETDATAHEADERADDRESS = '!A4:Z4';
 var SHEETROUNDNAMEADDRESS = '!D2';   // the range address of the round name
+var SHEETRANKOFFSET = 4;
 
 
 //
@@ -100,6 +101,7 @@ CategoryVM = function() {
     this.MaxProblems = 0;
     this.TopHolds = [];
     this.MemberIdOffset = -1;
+    this.IsRankGathered = false;
     this.Climbers = [];
 }
 ClimberVM = function () {
@@ -150,18 +152,25 @@ function sstLookupCatName(catid, gender) {
     return sheetName;
 }
 
-function sstFindRankedClimbers(cvm) {
+function sstFindClimbers(cvm) {
     var catid = sstCategoryName2CatId[cvm.Name];
     var g = sstCategoryName2Gender[cvm.Name];
 
-    var $divCG = $("#divBouldering div.competitor-wrapper[data-categoryid='" + catid + "'][data-gender='" + g + "'] tr[data-competitorid]");
+    var $divC = $("#divBouldering div.competitor-wrapper[data-categoryid='" + catid + "'][data-gender='" + g + "']");
+    var $divCH = $divC.find(".competitor-header .rounds-controls a.current");
+    if ($divCH.length)
+        cvm.RoundName = $divCH[0].textContent;
+
+    var $divCG = $divC.find("tr[data-competitorid]");
     $divCG.each(function() {
         var c = new ClimberVM();
         c.MemberId = this.attributes["data-competitorid"].value;
         c.Name = this.children[0].textContent;
         c.TeamName = this.children[1].textContent;
-        if (this.querySelector(".scoring.result.rank"))
+        if (this.querySelector(".scoring.result.rank")) {
             c.Rank = parseInt(this.querySelector(".scoring.result.rank").textContent);
+            cvm.IsRankGathered = true;
+        }
         cvm.Climbers.push(c);
     });
     return cvm;
@@ -229,12 +238,16 @@ function sstPullSheetData(targetGoogleSheetId, categoryName, runWhenSuccess) {
             for (var i = 0; i < range3.values.length; i++) {
                 var row3 = range3.values[i];
 
+                if (row3.length < 1 || row3[CLIMBERNAMEOFFSET] == "" || row3[categoryVM.MemberIdOffset] == "")
+                    continue;   // don't include blank names or memberid rows
+
                 if (i >= categoryVM.Climbers.length - 1) {
                     categoryVM.Climbers.push(new ClimberVM);
                 }
                 var climber = categoryVM.Climbers[i];
                 climber.Name = row3[CLIMBERNAMEOFFSET];
                 climber.MemberId = row3[categoryVM.MemberIdOffset];
+                climber.Rank = row3[SHEETRANKOFFSET];
 
                 for (var j = 0; j < categoryVM.MaxProblems; j++) {
                     climber.Problems.push(new ProbVM);
@@ -567,8 +580,7 @@ function sstPushDatatoUSACCallback(cvm) {
 function sstCompareClicked() {
     if (!sstActiveSheetId)
         alert("You must select the main sheet first.");
-    $("#sst-compare-results-div").empty();
-    $("#sst-compare-results-wrapper").show();
+    sstPrintResetShow();
 
     // assume comparing with current sheet, and now need to select the other sheet
     sstShowPicker(sstPickerDoubleCheckSheetCallback);
@@ -650,6 +662,10 @@ function sstPrint(s, isGood) {
             .text(s)
         );
 }
+function sstPrintResetShow() {
+    $("#sst-compare-results-div").empty();
+    $("#sst-compare-results-wrapper").show();
+}
 
 function sstGetJQArrayClimbers(cvm) {
     return $($.map(cvm.Climbers, function (c) {
@@ -666,10 +682,66 @@ function sstPushClimberNamesIds2SheetClicked() {
         SHEETNAMES.forEach(function(catName) {
             var cvm = new CategoryVM();
             cvm.Name = catName;
-            sstFindRankedClimbers(cvm);
+            sstFindClimbers(cvm);
             sstInitSheetWithNamesId(sstActiveSheetId, cvm);
         });
     }
+}
+
+function sstCheckRankComputationClicked() {
+    if (!sstActiveSheetId)
+        alert("You must select the main sheet first.");
+    sstPrintResetShow();
+
+    // compare the current sheet with the currently shown ranking in whatever round is shown
+    SHEETNAMES.forEach(function (catName) {
+        var cvmOnWebPage = new CategoryVM();
+        cvmOnWebPage.Name = catName;
+        sstFindClimbers(cvmOnWebPage);
+
+        if (cvmOnWebPage.IsRankGathered) {
+            sstPullSheetData(sstActiveSheetId, catName,
+            sstCheckRankCompClosure(cvmOnWebPage)
+            );
+        } else {
+            sstPrint(cvmOnWebPage.Name + " are not currently showing round ranks.", true);
+        }
+    });
+    
+}
+function sstCheckRankCompClosure(cvmOnWebPage) {
+    return function(sheetCVM) {
+        sstCheckRankComp(sheetCVM, cvmOnWebPage);
+    }
+}
+function sstCheckRankComp(sheetCVM, cvmOnWebPage) {
+    if (sheetCVM.RoundName.substring(0, 4) != cvmOnWebPage.RoundName.substring(0, 4)) {
+        sstPrint(sheetCVM.Name + " is set to different rounds. [" + sheetCVM.RoundName + " vs. " + cvmOnWebPage.RoundName + "]");
+        return;
+    }
+
+    // check same climbers
+    var arrayMainClimbers = sstGetJQArrayClimbers(sheetCVM);
+    var array2ndClimbers = sstGetJQArrayClimbers(cvmOnWebPage);
+    var arrayNotIn2nd = arrayMainClimbers.not(array2ndClimbers);
+    var arrayNotInMain = array2ndClimbers.not(arrayMainClimbers);
+    if (arrayNotIn2nd.length > 0 || arrayNotInMain.length > 0) {
+        sstPrint("These climbers are not in the " + sheetCVM.Name + " sheet:" + arrayNotIn2nd.toArray().join(', ') +
+        ".  And these climbers are not on the " + sheetCVM.Name + " section of the webpage:" + arrayNotInMain.toArray().join(', '));
+    }
+
+    // check problems of each climber. Assumes all climbers are in both
+    sheetCVM.Climbers.forEach(function (c) {
+        if (c.MemberId == "")
+            return;
+
+        var c2match = cvmOnWebPage.Climbers.find(function (c2) { return c2.MemberId === c.MemberId });
+
+        if (c.Rank != c2match.Rank) {
+            sstPrint(sheetCVM.Name + " " + c.Name + " has different computed ranks.   [" + c.Rank + " vs. " + c2match.Rank + "]");
+        }
+    });
+    sstPrint(sheetCVM.Name + " ranking compare finished.", true);
 }
 
 

@@ -46,12 +46,21 @@ td.far-right-cell-buttons {
     width: 120px;
 }
 
+#sst-check-rank-comp-button-div {
+    margin-left: 50px;
+}
+#sst-check-rank-comp-button {
+    white-space: normal;
+    width: 120px;
+    padding: 10px;
+}
 
 #sst-compare-button-div {
     margin-left: 50px;
 }
 #sst-compare-button {
-    height: 50px;
+    white-space: normal;
+    width: 120px;
     padding: 10px;
 }
 #sst-compare-results-wrapper {
